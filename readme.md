@@ -178,6 +178,28 @@ const data = await response.json();
 console.log(data.isLogIn); // true if successful
 ```
 
+### Login with Headers (Alternative Method)
+
+```javascript
+// If you prefer to handle tokens manually instead of using cookies
+const response = await fetch('/api/auth/login', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    email: 'john@example.com',
+    password: 'mypassword123',
+    accountType: 'email'
+  })
+});
+
+const data = await response.json();
+// Tokens will be returned in the response body
+console.log(data.secureSession.accessToken);
+console.log(data.secureSession.sessionId);
+```
+
 ### Check if User is Logged In
 
 ```javascript
@@ -213,18 +235,47 @@ const response = await fetch('/api/auth/logout', {
 // User is now logged out
 ```
 
-### Refresh Token (Happens Automatically)
+### Refresh Token (Manual - Required for Other API Calls)
 
 ```javascript
-// This usually happens automatically, but you can call it manually if needed
+// You need to call this manually before your access token expires (every ~10-14 minutes)
 const response = await fetch('/api/auth/secure/token/refresh', {
-  method: 'POST'
+  method: 'POST',
+  headers: {
+    'x-session-id': 'your-session-id-here' // Required
+  }
 });
 
 const data = await response.json();
 if (data.isTokenRefresh) {
   console.log('Got new token:', data.accessToken);
+  // Update your stored token for future requests
+} else {
+  // Session expired, user needs to log in again
 }
+```
+
+### Background Token Refresh (Recommended)
+
+```javascript
+// Set up a background job to refresh tokens every 10 minutes
+setInterval(async () => {
+  const response = await fetch('/api/auth/secure/token/refresh', {
+    method: 'POST',
+    headers: {
+      'x-session-id': localStorage.getItem('sessionId') // or however you store it
+    }
+  });
+  
+  const data = await response.json();
+  if (data.isTokenRefresh) {
+    localStorage.setItem('accessToken', data.accessToken);
+    console.log('Token refreshed automatically');
+  } else {
+    // Redirect to login page
+    window.location.href = '/login';
+  }
+}, 10 * 60 * 1000); // Every 10 minutes
 ```
 
 ### What Happens Behind the Scenes
@@ -241,7 +292,9 @@ When you make API requests, the API:
 
 1. **Looks for the JWT token** in cookies (automatic) or headers (`x-access-token`)
 2. **Checks if it's valid** and not expired
-3. **If it's expired**, tries to refresh it automatically using the session ID
+3. **If it's expired**:
+   - For `/check-login` endpoint: tries to refresh automatically using session ID
+   - For other endpoints: rejects the request (you need to call refresh manually)
 4. **If everything's good**, lets the request through
 5. **If not**, asks the user to log in again
 
@@ -251,12 +304,12 @@ When you make API requests, the API:
 
 ### 1. Install and Run
 
-```bash
+   ```bash
 git clone https://github.com/yourusername/auth-api.git
 cd auth-api
-npm install
-npm start
-```
+   npm install
+   npm start
+   ```
 
 That's it! Your auth service is running on `http://localhost:5001`
 
@@ -286,6 +339,12 @@ POST /api/auth/login
 ```
 Send: `{ email, password, accountType }`
 
+*Optional headers:*
+```http
+x-access-token: existing-token
+x-session-id: existing-session-id
+```
+
 **Check if logged in:**
 ```http
 GET /api/auth/check-login
@@ -308,11 +367,14 @@ POST /api/auth/logout
 POST /api/auth/delete/account
 ```
 
-**Refresh token (automatic):**
+**Refresh token (manual):**
 ```http
 POST /api/auth/secure/token/refresh
 ```
+Headers: `x-session-id: your-session-id`
 Returns: `{ isTokenRefresh: true, accessToken: "new-token" }`
+
+*Note: Only `/check-login` refreshes automatically. Other endpoints require manual refresh.*
 
 **Check session middleware:**
 The API automatically validates sessions on protected routes using the `checkUserSession` middleware.
