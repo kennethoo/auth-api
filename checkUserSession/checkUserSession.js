@@ -1,4 +1,3 @@
-import message from "../funnyerrorMessage/notLogin.js";
 import { secureSessionApi } from "../service/auth/secureSession.js";
 import { authApi } from "../service/auth/authApi.js";
 
@@ -34,7 +33,10 @@ const checkSession = async (req, res, next) => {
     return res.status(401).json({ isLogin: false });
   } catch (error) {
     console.error("checkSession error:", error.message);
-    return res.status(401).send(message);
+    return res.status(401).json({ 
+      isLogin: false, 
+      error: "Authentication failed" 
+    });
   }
 };
 

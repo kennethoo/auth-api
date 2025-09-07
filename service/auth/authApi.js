@@ -3,33 +3,13 @@ import bcrypt from "bcryptjs";
 import { oTPApi } from "./otpApi.js";
 import sendCode from "../../emails/sendCode.js";
 import sendMorpionAIWelcomeEmail from "../../emails/morpionaiWelcome.js";
-import { userProfileService } from "../userProfileService.js";
 import { secureSessionApi } from "./secureSession.js";
-import { OAuth2Client } from 'google-auth-library';
+import User from "../../models/user.js";
 
-
-const ADMIN_EMAIL = "kcgandonou19@gmail.com";
-// This class manage the whole Auth of MorpionAi.it
-const Schema = mongoose.Schema;
-const model = new Schema({
-  email: String,
-  password: String,
-  username: String,
-  accountType: String,
-});
-model.pre("save", function (next) {
-  const user = this;
-  bcrypt.hash(user.password, 10, (error, hash) => {
-    user.password = hash;
-    next();
-  });
-});
-
-const User = mongoose.model("user", model);
+// This class manages the authentication for the Auth API
 
 class AuthApi {
   constructor() {
-    this.ACCOUNT_TYPE_GOOGLE = "google";
     this.ACCOUNT_TYPE_EMAIL = "email";
   }
 
@@ -69,16 +49,16 @@ class AuthApi {
   }
 
   async registerUser(userData) {
-    const { email, username, accountType, firstName, lastName, displayName } = userData;
+    const { email, username, accountType, firstName, lastName } = userData;
 
-    const uniqueName = userProfileService.generateRandomDisplayName();
     if (!email || !username || !accountType) {
       return {
         succeeded: false,
         errorMessage: "Please provide all required information (email, username, and account type).",
       };
     }
-    // add later a password validation function
+    
+    // Check if email is already taken
     const isEmailTaken = await this.isEmailTaken(email);
     if (isEmailTaken) {
       return {
@@ -87,36 +67,22 @@ class AuthApi {
       };
     }
 
-    // const isUsernameTaken = await this.isUsernameTaken(uniqueName);
-    // if (isUsernameTaken) {
-    //   return {
-    //     succeeded: false,
-    //     errorMessage: "This username is already taken. Please choose a different username.",
-    //   };
-    // }
-    const user = await User.create({ ...userData, username: uniqueName });
-    const userProfileData = {
-      userId: user.id,
-      username: uniqueName,
-      displayName: uniqueName, // Use provided displayName or generate random one
-      blocked: false,
-      email: user.email,
-      firstName,
-      lastName,
-      isAdmin: user.email === ADMIN_EMAIL,
-      numberOfWins: 0,
-      numberOfLosses: 0,
-      numberOfTies: 0,
-      level: 0,
-      points: 0,
-    };
-    await userProfileService.createUserProfile(userProfileData);
+    // Check if username is already taken
+    const isUsernameTaken = await this.isUsernameTaken(username);
+    if (isUsernameTaken) {
+      return {
+        succeeded: false,
+        errorMessage: "This username is already taken. Please choose a different username.",
+      };
+    }
+
+    const user = await User.create({ ...userData });
     
     // Send welcome email to the new user
     try {
       await sendMorpionAIWelcomeEmail({
         email: user.email,
-        username: uniqueName
+        username: user.username
       });
     } catch (error) {
       console.error('Error sending welcome email:', error);
@@ -139,11 +105,8 @@ class AuthApi {
     }
 
 
-    if (accountType == this.ACCOUNT_TYPE_GOOGLE) {
-      return this.logUserWithGoogleAccount(payload);
-    }
     if (accountType == this.ACCOUNT_TYPE_EMAIL) {
-      return this.logUserWithSplitAccount(payload);
+      return this.logUserWithEmail(payload);
     }
 
     //Should never happend but ...
@@ -153,53 +116,9 @@ class AuthApi {
     };
   }
 
-  async verifyGoogleToken(accessToken) {
-    try {
-      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-      const ticket = await client.verifyIdToken({
-        idToken: accessToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-      
-      const payload = ticket.getPayload();
-      return {
-        succeeded: true,
-        email: payload.email,
-        firstName: payload.given_name,
-        lastName: payload.family_name,
-        picture: payload.picture,
-        googleId: payload.sub,
-      };
-    } catch (error) {
-      console.error('Google token verification failed:', error);
-      return {
-        succeeded: false,
-        errorMessage: 'Invalid Google token',
-      };
-    }
-  }
 
-  async logUserWithGoogleAccount(userLoginData) {
-    const { email } = userLoginData;
-    const userAccount = await this.getUserByEmail(email);
-    if (!userAccount) {
-      return {
-        isLogIn: false,
-        errorMessage: "No account found with this email. Please check your email or create a new account.",
-      };
-    }
-    const userProfile =  await userProfileService.getByEmail(email)
-    return this.logUserInUsingJWT({
-      email: userAccount.email,
-      userId: userAccount._id.toString(),
-      firstName: userProfile.firstName,
-      lastName: userProfile.lastName,
-      username: userAccount.username,
-      displayName: userProfile.displayName,
-    });
-  }
 
-  async logUserWithSplitAccount(userLoginData) {
+  async logUserWithEmail(userLoginData) {
     const { email, password } = userLoginData;
     const userAccount = await this.getUserByEmail(email);
     if (!userAccount) {
@@ -221,14 +140,13 @@ class AuthApi {
         errorMessage: "Incorrect password. Please check your password and try again.",
       };
     }
-    const userProfile =  await userProfileService.getByEmail(email)
     return this.logUserInUsingJWT({
       email: userAccount.email,
       userId: userAccount._id.toString(),
-      firstName: userProfile.firstName,
-      lastName: userProfile.lastName,
+      firstName: userAccount.firstName || '',
+      lastName: userAccount.lastName || '',
       username: userAccount.username,
-      displayName: userProfile.displayName,
+      displayName: userAccount.username,
     });
   }
 
@@ -249,74 +167,6 @@ class AuthApi {
     };
   }
 
-  async googleOAuthLogin(accessToken) {
-    try {
-      // Verify the Google token
-      const tokenVerification = await this.verifyGoogleToken(accessToken);
-      if (!tokenVerification.succeeded) {
-        return {
-          isLogIn: false,
-          errorMessage: tokenVerification.errorMessage,
-        };
-      }
-
-      const { email, firstName, lastName, picture, googleId } = tokenVerification;
-
-      // Check if user exists
-      let userAccount = await this.getUserByEmail(email);
-      
-      if (!userAccount) {
-        // User doesn't exist, create new account
-        const username = `${firstName}_${lastName}_${Math.floor(Math.random() * 1000)}`.toLowerCase();
-        const displayName = userProfileService.generateRandomDisplayName();
-        
-        const userData = {
-          email,
-          username,
-          accountType: this.ACCOUNT_TYPE_GOOGLE,
-          firstName,
-          lastName,
-          displayName,
-          googleId,
-        };
-
-        const registrationResult = await this.registerUser(userData);
-        if (!registrationResult.succeeded) {
-          return {
-            isLogIn: false,
-            errorMessage: registrationResult.errorMessage,
-          };
-        }
-
-        userAccount = await this.getUserByEmail(email);
-      } else if (userAccount.accountType !== this.ACCOUNT_TYPE_GOOGLE) {
-        // User exists but with different account type
-        return {
-          isLogIn: false,
-          errorMessage: "This email is registered with a different account type. Please use the correct login method.",
-        };
-      }
-
-      // Get user profile
-      const userProfile = await userProfileService.getByEmail(email);
-      
-      // Log the user in
-      return this.logUserInUsingJWT({
-        email: userAccount.email,
-        userId: userAccount._id.toString(),
-        firstName: userProfile?.firstName || firstName,
-        lastName: userProfile?.lastName || lastName,
-        username: userAccount.username,
-        displayName: userProfile?.displayName,
-      });
-    } catch (error) {
-      console.error('Google OAuth login error:', error);
-      return {
-        isLogIn: false,
-        errorMessage: 'Failed to process Google login. Please try again.',
-      };
-    }
-  }
 
   async isUserLogin({ access_token, session_id }) {
     const errorResponse = {
@@ -383,23 +233,20 @@ class AuthApi {
     }
     const { userId } = secureSession;
     const user = await User.findOne({ _id: userId });
-    const userProfileResult = await userProfileService.getByUserId(userId)
-    if (!user || !userProfileResult.succeeded) {
+    if (!user) {
       return {
         isTokenRefresh: false,
       };
     }
 
-    const userProfile = userProfileResult.userProfile;
-
-    //Generate and sign Tokenatuh
+    //Generate and sign Token
     const accessToken = await secureSessionApi.generateAccessToken({
       email: user.email,
       userId: user._id,
-      firstName: userProfile.firstName,
-      lastName: userProfile.lastName,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       username: user.username,
-      displayName: userProfile.displayName,
+      displayName: user.username,
     });
 
     return {

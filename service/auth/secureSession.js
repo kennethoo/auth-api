@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import logger from "../systemReport/Logger.js";
 const Schema = mongoose.Schema;
 
 const model = new Schema({
@@ -83,12 +82,7 @@ class SecureSessionApi {
       const user = jwt.verify(access_token, process.env.TOKEN_SECRET);
       return user;
     } catch (error) {
-      logger.log({
-        isError: true,
-        platform: "backend",
-        message: error.message,
-        fileName: "secureSession.js",
-      });
+      console.error('JWT verification error:', error.message);
       return null;
     }
   }

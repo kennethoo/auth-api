@@ -1,7 +1,5 @@
 import express from "express";
 const router = express.Router();
-import User from "../models/signup.js";
-import bcrypt from "bcryptjs";
 import Session from "../models/session.js";
 import { authApi } from "../service/auth/authApi.js";
 import { secureSessionApi } from "../service/auth/secureSession.js";
@@ -31,51 +29,7 @@ router.post("/api/auth/logout", async (req, res) => {
   res.status(200).json({ message: "Logged out" });
 });
 
-router.post("/api/auth/v1/change-password", (req, res) => {
-  User.findOne({ username: req.body.username })
-    .then((user) => {
-      if (user) {
-        bcrypt.compare(
-          req.body.oldPassword,
-          user.password,
-          function (err, same) {
-            if (same) {
-              bcrypt.hash(req.body.newPassword, 10, (error, hash) => {
-                User.findOneAndUpdate(
-                  { username: req.body.username },
-                  { password: hash },
-                ).then((result) => {
-                  res.send(JSON.stringify("succeeded"));
-                });
-              });
-            } else {
-              res.send(JSON.stringify("Your password is incorect"));
-            }
-          },
-        );
-      } else {
-        res.send(JSON.stringify("This username do not exist"));
-      }
-    })
-    .catch((error) => {});
-});
 
-router.post("/api/auth/v1/update-password", (req, res) => {
-  User.findOne({ email: req.body.email }).then((user) => {
-    if (user) {
-      bcrypt.hash(req.body.newPassword, 10, (error, hash) => {
-        User.findOneAndUpdate(
-          { email: req.body.email },
-          { password: hash },
-        ).then((result) => {
-          res.send({ succeeded: true });
-        });
-      });
-    } else {
-      res.send(JSON.stringify("User does not exit"));
-    }
-  });
-});
 
 router.post("/api/auth/login", async (req, res) => {
   const result = await authApi.logUserIn(req.body);
@@ -104,30 +58,6 @@ router.post("/api/auth/login", async (req, res) => {
   res.status(200).json(result);
 });
 
-router.post("/api/auth/google-login", async (req, res) => {
-  const result = await authApi.googleOAuthLogin(req.body.accessToken);
-  if (result.isLogIn) {
-    // Send access token in a secure cookie
-    const secureSession = result.secureSession;
-    const { accessToken, sessionId } = secureSession;
-
-    // Store access_token in HttpOnly cookie
-    res.cookie(
-      "access_token",
-      accessToken,
-      secureSessionApi.ACCESS_TOKEN_FOR_COOKIE_CONFIG,
-    );
-
-    // Store session ID in HttpOnly cookie
-    res.cookie(
-      "session_id",
-      sessionId,
-      secureSessionApi.SESSION_TOKEN_FOR_COOKIE_CONFIG,
-    );
-  }
-
-  res.status(200).json(result);
-});
 
 router.get("/api/auth/check-login", async (req, res) => {
   const accessToken =
