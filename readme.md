@@ -119,6 +119,384 @@ const loginResponse = await fetch('/api/auth/login', {
 
 ---
 
+## 🧠 **How It Works**
+
+### **High-Level System Overview**
+
+The Auth API is a **stateless microservice** that handles user authentication through a secure, token-based system. Here's how it works:
+
+#### **🔐 Core Authentication Flow**
+
+```mermaid
+graph TD
+    A[User Registration/Login] --> B[Validate Credentials]
+    B --> C[Generate JWT Access Token]
+    C --> D[Create Secure Session]
+    D --> E[Store in HttpOnly Cookies]
+    E --> F[Return Success Response]
+    
+    G[API Request] --> H[Extract Token from Cookie/Header]
+    H --> I[Validate JWT Token]
+    I --> J{Token Valid?}
+    J -->|Yes| K[Allow Access]
+    J -->|No| L[Try Token Refresh]
+    L --> M{Refresh Success?}
+    M -->|Yes| N[Generate New Token & Allow Access]
+    M -->|No| O[Deny Access - Require Login]
+```
+
+#### **🛡️ Security Architecture**
+
+1. **Password Security**: All passwords are hashed using bcrypt with 10 salt rounds
+2. **Token Management**: JWT access tokens (15min) + refresh tokens (90 days)
+3. **Session Storage**: Secure sessions stored in MongoDB with device tracking
+4. **Cookie Security**: HttpOnly, Secure, SameSite cookies prevent XSS/CSRF
+5. **OTP Verification**: Email-based verification for account creation
+
+#### **📊 Data Flow**
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Auth API      │    │   Database      │
+│   Application   │    │   (Node.js)     │    │   (MongoDB)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │ 1. Register/Login     │                       │
+         ├──────────────────────►│                       │
+         │                       │ 2. Hash Password      │
+         │                       ├──────────────────────►│
+         │                       │ 3. Store User Data    │
+         │                       ├──────────────────────►│
+         │                       │ 4. Generate JWT       │
+         │                       │                       │
+         │ 5. Return Tokens      │                       │
+         │◄──────────────────────┤                       │
+         │                       │                       │
+         │ 6. Store in Cookies   │                       │
+         │                       │                       │
+         │ 7. API Requests       │                       │
+         ├──────────────────────►│                       │
+         │                       │ 8. Validate JWT       │
+         │                       │                       │
+         │ 9. Allow/Deny Access  │                       │
+         │◄──────────────────────┤                       │
+```
+
+---
+
+## 📝 **Detailed Examples**
+
+### **🔐 User Registration Flow**
+
+Let's walk through exactly what happens when a user registers:
+
+#### **Step 1: User Sends Registration Request**
+```javascript
+// Frontend sends this request
+const registrationData = {
+  email: "john@example.com",
+  username: "johndoe", 
+  password: "mypassword123",
+  accountType: "email",
+  firstName: "John",
+  lastName: "Doe"
+};
+
+fetch('/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(registrationData)
+});
+```
+
+#### **Step 2: Server Validates Input**
+```javascript
+// Auth API validates the data
+async registerUser(userData) {
+  // 1. Check required fields
+  if (!email || !username || !accountType) {
+    return { succeeded: false, errorMessage: "Missing required fields" };
+  }
+  
+  // 2. Check if email already exists
+  const isEmailTaken = await User.findOne({ email });
+  if (isEmailTaken) {
+    return { succeeded: false, errorMessage: "Email already registered" };
+  }
+  
+  // 3. Check if username already exists
+  const isUsernameTaken = await User.findOne({ username });
+  if (isUsernameTaken) {
+    return { succeeded: false, errorMessage: "Username already taken" };
+  }
+}
+```
+
+#### **Step 3: Password Hashing**
+```javascript
+// User model automatically hashes password before saving
+userSchema.pre("save", function (next) {
+  const user = this;
+  if (user.isModified('password')) {
+    bcrypt.hash(user.password, 10, (error, hash) => {
+      if (error) return next(error);
+      user.password = hash; // Store hashed password
+      next();
+    });
+  } else {
+    next();
+  }
+});
+```
+
+#### **Step 4: User Creation & Welcome Email**
+```javascript
+// Create user in database
+const user = await User.create({ ...userData });
+
+// Send welcome email
+await sendMorpionAIWelcomeEmail({
+  email: user.email,
+  username: user.username
+});
+
+// Auto-login the user after registration
+const loginResult = await this.logUserIn(userData);
+```
+
+#### **Step 5: Generate Secure Session**
+```javascript
+// Create JWT access token (15 minutes)
+const accessToken = jwt.sign({
+  email: user.email,
+  userId: user._id,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  username: user.username
+}, process.env.TOKEN_SECRET, { expiresIn: "15m" });
+
+// Create session ID (90 days)
+const sessionId = crypto.randomUUID();
+
+// Store session in database
+await SecureSession.create({
+  sessionId,
+  userId: user._id,
+  createdAt: new Date().toISOString(),
+  expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+});
+```
+
+#### **Step 6: Set Secure Cookies**
+```javascript
+// Set HttpOnly cookies (XSS protection)
+res.cookie("access_token", accessToken, {
+  httpOnly: true,    // Can't be accessed by JavaScript
+  secure: true,      // Only sent over HTTPS
+  sameSite: "None",  // CSRF protection
+  path: "/",
+  maxAge: 15 * 60 * 1000 // 15 minutes
+});
+
+res.cookie("session_id", sessionId, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "None", 
+  path: "/",
+  maxAge: 90 * 24 * 60 * 60 * 1000 // 90 days
+});
+```
+
+#### **Step 7: Return Success Response**
+```json
+{
+  "succeeded": true,
+  "isLogIn": true,
+  "secureSession": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "sessionId": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+
+---
+
+### **🔑 User Login Flow**
+
+Now let's see what happens when a user logs in:
+
+#### **Step 1: User Sends Login Request**
+```javascript
+const loginData = {
+  email: "john@example.com",
+  password: "mypassword123", 
+  accountType: "email"
+};
+
+fetch('/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(loginData)
+});
+```
+
+#### **Step 2: Server Validates Credentials**
+```javascript
+async logUserWithEmail(userLoginData) {
+  const { email, password } = userLoginData;
+  
+  // 1. Find user by email
+  const userAccount = await User.findOne({ email });
+  if (!userAccount) {
+    return { isLogIn: false, errorMessage: "No account found with this email" };
+  }
+  
+  // 2. Verify password
+  const isSamePassword = await bcrypt.compare(password, userAccount.password);
+  if (!isSamePassword) {
+    return { isLogIn: false, errorMessage: "Incorrect password" };
+  }
+  
+  // 3. Generate new session
+  return this.logUserInUsingJWT({
+    email: userAccount.email,
+    userId: userAccount._id,
+    firstName: userAccount.firstName,
+    lastName: userAccount.lastName,
+    username: userAccount.username
+  });
+}
+```
+
+#### **Step 3: Generate New Session & Tokens**
+```javascript
+// Same process as registration - generate JWT and session
+const accessToken = jwt.sign(userData, process.env.TOKEN_SECRET, { expiresIn: "15m" });
+const sessionId = crypto.randomUUID();
+
+// Store session in database
+await SecureSession.create({ sessionId, userId, ... });
+```
+
+#### **Step 4: Set Cookies & Return Response**
+```javascript
+// Set secure cookies and return success
+res.cookie("access_token", accessToken, secureConfig);
+res.cookie("session_id", sessionId, sessionConfig);
+res.json({ isLogIn: true, secureSession: { accessToken, sessionId } });
+```
+
+---
+
+### **🔍 Session Validation Flow**
+
+Here's how the API validates user sessions on each request:
+
+#### **Step 1: Extract Token**
+```javascript
+// Middleware extracts token from cookie or header
+const accessToken = req.headers["x-access-token"] || req.cookies?.access_token;
+const sessionId = req.headers["x-session-id"] || req.cookies?.session_id;
+```
+
+#### **Step 2: Validate Access Token**
+```javascript
+async getUserFromAccessToken(access_token) {
+  try {
+    // Verify JWT signature and expiration
+    const user = jwt.verify(access_token, process.env.TOKEN_SECRET);
+    return user; // Token is valid
+  } catch (error) {
+    console.error('JWT verification error:', error.message);
+    return null; // Token is invalid or expired
+  }
+}
+```
+
+#### **Step 3: Try Token Refresh (if access token fails)**
+```javascript
+async refreshSecureToken(sessionId) {
+  // 1. Check if session exists and is valid
+  const session = await SecureSession.findOne({ sessionId });
+  if (!session || new Date() > new Date(session.expiresAt)) {
+    return { isTokenRefresh: false };
+  }
+  
+  // 2. Get user data
+  const user = await User.findById(session.userId);
+  if (!user) {
+    return { isTokenRefresh: false };
+  }
+  
+  // 3. Generate new access token
+  const newAccessToken = jwt.sign({
+    email: user.email,
+    userId: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    username: user.username
+  }, process.env.TOKEN_SECRET, { expiresIn: "15m" });
+  
+  return { isTokenRefresh: true, accessToken: newAccessToken };
+}
+```
+
+#### **Step 4: Allow or Deny Access**
+```javascript
+// If token is valid or refresh succeeded
+if (user || refreshResult.isTokenRefresh) {
+  req.user = user || refreshedUser;
+  return next(); // Allow access to protected route
+} else {
+  return res.status(401).json({ isLogin: false }); // Deny access
+}
+```
+
+---
+
+### **🛡️ Security Features in Action**
+
+#### **Password Hashing**
+```javascript
+// Before saving to database
+const hashedPassword = await bcrypt.hash("mypassword123", 10);
+// Result: "$2a$10$N9qo8uLOickgx2ZMRZoMye..."
+
+// During login verification
+const isValid = await bcrypt.compare("mypassword123", hashedPassword);
+// Result: true
+```
+
+#### **JWT Token Structure**
+```javascript
+// Access Token Payload
+{
+  "email": "john@example.com",
+  "userId": "507f1f77bcf86cd799439011",
+  "firstName": "John",
+  "lastName": "Doe", 
+  "username": "johndoe",
+  "iat": 1640995200,  // Issued at
+  "exp": 1640996100   // Expires at (15 minutes)
+}
+```
+
+#### **Session Storage**
+```javascript
+// Session document in MongoDB
+{
+  "_id": "507f1f77bcf86cd799439012",
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+  "userId": "507f1f77bcf86cd799439011",
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "expiresAt": "2024-04-01T00:00:00.000Z",
+  "device": "Mozilla/5.0...",
+  "location": "192.168.1.1"
+}
+```
+
+---
+
 ## 🚀 **Quick Start**
 
 ### **1. Clone & Install**
