@@ -91,6 +91,7 @@ This authentication API handles all the boring but important stuff so you don't 
 - Simple health check endpoints to see if everything's working
 - Clear error messages when something goes wrong
 - Easy to integrate with any frontend framework
+- Works with all modern browsers (Chrome, Firefox, Safari, Edge)
 
 ---
 
@@ -234,26 +235,6 @@ const response = await fetch('/api/auth/logout', {
 // User is now logged out
 ```
 
-### Refresh Token (Manual - Required for Other API Calls)
-
-```javascript
-// You need to call this manually before your access token expires (every ~10-14 minutes)
-const response = await fetch('/api/auth/secure/token/refresh', {
-  method: 'POST',
-  headers: {
-    'x-session-id': 'your-session-id-here' // Required
-  }
-});
-
-const data = await response.json();
-if (data.isTokenRefresh) {
-  console.log('Got new token:', data.accessToken);
-  // Update your stored token for future requests
-} else {
-  // Session expired, user needs to log in again
-}
-```
-
 ### Background Token Refresh (Recommended)
 
 ```javascript
@@ -275,6 +256,26 @@ setInterval(async () => {
     window.location.href = '/login';
   }
 }, 10 * 60 * 1000); // Every 10 minutes
+```
+
+### Manual Token Refresh (Alternative)
+
+```javascript
+// You can also call this manually before your access token expires (every ~10-14 minutes)
+const response = await fetch('/api/auth/secure/token/refresh', {
+  method: 'POST',
+  headers: {
+    'x-session-id': 'your-session-id-here' // Required
+  }
+});
+
+const data = await response.json();
+if (data.isTokenRefresh) {
+  console.log('Got new token:', data.accessToken);
+  // Update your stored token for future requests
+} else {
+  // Session expired, user needs to log in again
+}
 ```
 
 ### What Happens Behind the Scenes
@@ -443,6 +444,20 @@ The code is organized simply:
 
 ---
 
+## Testing Your API
+
+**Quick test:**
+```bash
+curl http://localhost:5001/health
+```
+
+**Test registration:**
+```bash
+curl -X POST http://localhost:5001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","username":"testuser","password":"password123","accountType":"email","firstName":"Test","lastName":"User"}'
+```
+
 ## Deploying Your API
 
 ### Easy Deployment Options
@@ -458,20 +473,6 @@ The code is organized simply:
 - **Render** - Automatic deployments
 - **DigitalOcean** - App Platform
 - **AWS** - ECS or Lambda
-
-### Testing Your API
-
-**Quick test:**
-```bash
-curl http://localhost:5001/health
-```
-
-**Test registration:**
-```bash
-curl -X POST http://localhost:5001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","username":"testuser","password":"password123","accountType":"email","firstName":"Test","lastName":"User"}'
-```
 
 ## That's It!
 
