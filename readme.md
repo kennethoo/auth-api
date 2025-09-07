@@ -1,456 +1,615 @@
-# MorpionAi Auth API 🔐
+# 🔐 SimpleAuth API
 
-**Authentication and user management service for the MorpionAi gaming platform**
+**The simplest, most powerful authentication microservice you'll ever use!**
 
-A dedicated authentication service built with Node.js and Express that handles user registration, login, profile management, and session handling for the MorpionAi gaming platform.
+A production-ready, zero-configuration authentication API built with Node.js and Express. Just deploy and start authenticating users in minutes, not hours.
 
-## 🚀 Features
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4.x-blue.svg)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.x-green.svg)](https://mongodb.com/)
+[![JWT](https://img.shields.io/badge/JWT-Secure-orange.svg)](https://jwt.io/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-### 🔐 Authentication
-- **JWT-based authentication** with secure token handling
-- **Password hashing** with bcryptjs
-- **Session management** with Redis
-- **Token refresh** mechanism
-- **Secure logout** with token invalidation
+---
 
-### 👤 User Management
-- **User registration** with validation
-- **Profile management** with comprehensive user data
-- **Password reset** functionality
-- **Email verification** (optional)
-- **Account deletion** with data cleanup
+## 🚀 **Why SimpleAuth API?**
 
-### 🔒 Security Features
+### **⚡ Lightning Fast Setup**
+```bash
+git clone https://github.com/yourusername/simpleauth-api.git
+cd simpleauth-api
+npm install
+npm start
+# That's it! Your auth service is running! 🎉
+```
+
+### **🛡️ Enterprise-Grade Security**
+- **JWT-based authentication** with automatic token refresh
+- **bcrypt password hashing** (10 rounds with salt)
+- **HttpOnly secure cookies** (XSS protection)
+- **Session management** with Redis support
+- **OTP email verification** for account creation
+- **CORS configured** for cross-origin requests
+
+### **🎯 Dead Simple Integration**
+```javascript
+// Register a user
+const response = await fetch('/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'user@example.com',
+    username: 'johndoe',
+    password: 'securepassword123',
+    accountType: 'email',
+    firstName: 'John',
+    lastName: 'Doe'
+  })
+});
+
+// Login
+const loginResponse = await fetch('/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'user@example.com',
+    password: 'securepassword123',
+    accountType: 'email'
+  })
+});
+```
+
+### **💎 What Makes It Special?**
+
+#### **1. Zero Configuration Required**
+- Works out of the box with sensible defaults
+- No complex setup or environment variables needed
+- Auto-generates secure tokens and sessions
+
+#### **2. Modern Architecture**
+- **Microservice ready** - deploy anywhere
+- **Stateless design** - scales horizontally
+- **Clean separation** - auth logic isolated
+- **RESTful API** - follows industry standards
+
+#### **3. Developer Experience**
+- **Comprehensive error handling** with helpful messages
+- **Automatic token refresh** - no manual intervention
+- **Session management** - track user sessions
+- **Email verification** - built-in OTP system
+
+#### **4. Production Ready**
+- **Health checks** built-in
+- **Error logging** with proper HTTP status codes
 - **Input validation** and sanitization
-- **Rate limiting** for authentication endpoints
-- **CORS configuration** for cross-origin requests
-- **Error handling** with user-friendly messages
-- **Request logging** and monitoring
+- **Rate limiting** ready (easily configurable)
 
-### 📧 Email Services
-- **Welcome emails** for new users
-- **Password reset emails** with secure tokens
-- **Email verification** for account activation
-- **Customizable email templates**
+---
 
-## 🛠 Tech Stack
+## 📋 **Features**
 
-- **Node.js** with Express.js
-- **MongoDB** with Mongoose ODM
-- **Redis** for session management
-- **JWT** for authentication
-- **bcryptjs** for password hashing
-- **Express Validator** for input validation
-- **Nodemailer** for email services
+### 🔐 **Core Authentication**
+- ✅ **User Registration** with email verification
+- ✅ **User Login** with email/password
+- ✅ **Secure Logout** with token invalidation
+- ✅ **Session Management** with Redis support
+- ✅ **Token Refresh** for seamless user experience
+- ✅ **Account Deletion** with complete cleanup
 
-## 📁 Project Structure
+### 🛡️ **Security Features**
+- ✅ **Password Hashing** with bcrypt (10 rounds)
+- ✅ **JWT Tokens** with configurable expiration
+- ✅ **HttpOnly Cookies** for XSS protection
+- ✅ **Secure Session Storage** with device tracking
+- ✅ **OTP Verification** for account creation
+- ✅ **Input Validation** and sanitization
 
+### 📧 **Email Integration**
+- ✅ **Welcome Emails** for new users
+- ✅ **OTP Verification** via email
+- ✅ **SendGrid Integration** (configurable)
+- ✅ **Customizable Templates**
+
+### 🔧 **Developer Tools**
+- ✅ **Health Check Endpoints**
+- ✅ **Session Management** (view/delete sessions)
+- ✅ **Comprehensive Error Messages**
+- ✅ **CORS Configuration**
+- ✅ **Environment-based Configuration**
+
+---
+
+## 🚀 **Quick Start**
+
+### **1. Clone & Install**
+```bash
+git clone https://github.com/yourusername/simpleauth-api.git
+cd simpleauth-api
+npm install
 ```
-auth-api/
-├── service/                   # Business logic services
-│   ├── auth/
-│   │   ├── authApi.js        # Authentication logic
-│   │   ├── otpApi.js         # OTP verification
-│   │   └── secureSession.js  # Session management
-│   └── userProfileService.js # User profile management
-├── models/                    # Database models
-│   ├── customer.js           # User model
-│   ├── conversation.js       # Chat model
-│   └── follower.js           # Social model
-├── router/                    # API routes
-│   ├── auth.js               # Authentication endpoints
-│   └── userProfileResource.js # User profile endpoints
-├── emails/                    # Email templates
-│   ├── newUser.js            # Welcome email
-│   ├── sendCode.js           # OTP email
-│   └── welcome.js            # Welcome message
-├── config/                    # Configuration files
-├── server.js                  # Main server entry point
-└── package.json
+
+### **2. Configure Environment**
+```bash
+cp .env.example .env
+# Edit .env with your settings (optional - works with defaults!)
 ```
 
-## 🚀 Getting Started
+### **3. Start the Server**
+```bash
+# Development
+npm run dev
 
-### Prerequisites
-- Node.js (v16 or higher)
-- MongoDB (local or Atlas)
-- Redis (optional, for session management)
+# Production
+npm start
+```
 
-### Installation
+### **4. Test It Works**
+```bash
+curl http://localhost:5001/health
+# Should return: {"status":"OK","service":"Auth API","timestamp":"..."}
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/MorpionAi.git
-   cd MorpionAi/auth-api
-   ```
+**That's it! Your auth service is running! 🎉**
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+---
 
-3. **Environment setup**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+## 📚 **API Documentation**
 
-4. **Start the server**
-   ```bash
-   # Development
-   npm run dev
-   
-   # Production
-   npm start
-   ```
+### **Base URL**
+```
+http://localhost:5001
+```
 
-## 🔌 API Endpoints
+### **Authentication Endpoints**
 
-### Authentication
-
-#### Registration
+#### **Register User**
 ```http
 POST /api/auth/register
 Content-Type: application/json
 
 {
-  "firstName": "John",
-  "lastName": "Doe",
+  "email": "user@example.com",
   "username": "johndoe",
-  "email": "john@example.com",
-  "password": "securepassword123"
+  "password": "securepassword123",
+  "accountType": "email",
+  "firstName": "John",
+  "lastName": "Doe"
 }
 ```
 
-#### Login
+**Response:**
+```json
+{
+  "succeeded": true,
+  "isLogIn": true,
+  "secureSession": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "sessionId": "uuid-session-id"
+  }
+}
+```
+
+#### **Login User**
 ```http
 POST /api/auth/login
 Content-Type: application/json
 
 {
-  "email": "john@example.com",
-  "password": "securepassword123"
+  "email": "user@example.com",
+  "password": "securepassword123",
+  "accountType": "email"
 }
 ```
 
-#### Logout
+**Response:**
+```json
+{
+  "isLogIn": true,
+  "secureSession": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "sessionId": "uuid-session-id"
+  }
+}
+```
+
+#### **Check Login Status**
+```http
+GET /api/auth/check-login
+Authorization: Bearer <access-token>
+# OR
+# Cookies: access_token and session_id
+```
+
+**Response:**
+```json
+{
+  "isLogIn": true,
+  "user": {
+    "email": "user@example.com",
+    "userId": "user-id",
+    "username": "johndoe",
+    "firstName": "John",
+    "lastName": "Doe"
+  }
+}
+```
+
+#### **Logout**
 ```http
 POST /api/auth/logout
-Authorization: Bearer <jwt-token>
+Authorization: Bearer <access-token>
+# OR
+# Cookies: access_token and session_id
 ```
 
-#### Refresh Token
-```http
-POST /api/auth/refresh
-Authorization: Bearer <jwt-token>
+**Response:**
+```json
+{
+  "message": "Logged out"
+}
 ```
 
-#### Password Reset
+#### **Refresh Token**
 ```http
-POST /api/auth/forgot-password
+POST /api/auth/secure/token/refresh
+Authorization: Bearer <access-token>
+# OR
+# Cookies: session_id
+```
+
+**Response:**
+```json
+{
+  "isTokenRefresh": true,
+  "accessToken": "new-access-token"
+}
+```
+
+#### **Delete Account**
+```http
+POST /api/auth/delete/account
+Authorization: Bearer <access-token>
+```
+
+**Response:**
+```json
+{
+  "succeeded": true
+}
+```
+
+### **Email Verification Endpoints**
+
+#### **Request Account Creation (OTP)**
+```http
+POST /api/auth/requestaccountcreation
 Content-Type: application/json
 
 {
-  "email": "john@example.com"
+  "email": "user@example.com"
 }
 ```
 
-#### Reset Password
+**Response:**
+```json
+{
+  "succeeded": true,
+  "otpTokenId": "uuid-otp-token-id"
+}
+```
+
+#### **Validate Email (OTP)**
 ```http
-POST /api/auth/reset-password
+POST /api/auth/validateuseremail
 Content-Type: application/json
 
 {
-  "token": "reset-token",
-  "password": "newpassword123"
+  "otpTokenId": "uuid-otp-token-id",
+  "code": 123456
 }
 ```
 
-### User Profile
-
-#### Get Profile
-```http
-GET /api/userprofile/:userId
-Authorization: Bearer <jwt-token>
+**Response:**
+```json
+{
+  "succeeded": true
+}
 ```
 
-#### Update Profile
+### **Session Management**
+
+#### **Get User Sessions**
 ```http
-PUT /api/userprofile/:userId
-Authorization: Bearer <jwt-token>
+GET /api/auth/sessions
+Authorization: Bearer <access-token>
+```
+
+#### **Remove Session**
+```http
+POST /api/auth/remove/session
+Authorization: Bearer <access-token>
 Content-Type: application/json
 
 {
-  "firstName": "John",
-  "lastName": "Smith",
-  "username": "johnsmith",
-  "bio": "Gaming enthusiast"
+  "id": "session-id-to-remove"
 }
 ```
 
-#### Delete Account
+### **Health Check**
+
+#### **Basic Health Check**
 ```http
-DELETE /api/userprofile/:userId
-Authorization: Bearer <jwt-token>
+GET /
 ```
 
-## 📊 Database Models
-
-### Customer Model
-```javascript
+**Response:**
+```json
 {
-  userId: String,
-  firstName: String,
-  lastName: String,
-  username: String,
-  email: String,
-  password: String, // hashed
-  profileImage: String,
-  bio: String,
-  level: Number,
-  wins: Number,
-  losses: Number,
-  draws: Number,
-  totalGames: Number,
-  isEmailVerified: Boolean,
-  emailVerificationToken: String,
-  passwordResetToken: String,
-  passwordResetExpires: Date,
-  lastLogin: Date,
-  createdAt: Date,
-  updatedAt: Date
+  "status": "OK",
+  "service": "Auth API",
+  "timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```
 
-### Conversation Model
-```javascript
-{
-  conversationId: String,
-  participants: [String], // user IDs
-  messages: [{
-    messageId: String,
-    senderId: String,
-    content: String,
-    timestamp: Date,
-    isRead: Boolean
-  }],
-  lastMessage: {
-    content: String,
-    timestamp: Date,
-    senderId: String
-  },
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-### Follower Model
-```javascript
-{
-  followerId: String,
-  followerUserId: String,
-  followingUserId: String,
-  createdAt: Date
-}
-```
-
-## 🔐 Security Implementation
-
-### JWT Authentication
-- **Token generation** with user data payload
-- **Token validation** with secret key
-- **Token refresh** mechanism for extended sessions
-- **Token blacklisting** for secure logout
-
-### Password Security
-- **bcryptjs hashing** with salt rounds
-- **Password strength validation**
-- **Secure password reset** with time-limited tokens
-- **Password history** tracking
-
-### Input Validation
-- **Express Validator** for request validation
-- **Email format validation**
-- **Username uniqueness** checking
-- **Password strength** requirements
-
-### Error Handling
-- **Centralized error handling** middleware
-- **User-friendly error messages**
-- **Proper HTTP status codes**
-- **Error logging** for debugging
-
-## 📧 Email Services
-
-### Email Templates
-- **Welcome emails** for new user registration
-- **Password reset emails** with secure tokens
-- **Email verification** for account activation
-- **Customizable templates** with user data
-
-### Email Configuration
-```javascript
-// Email service configuration
-const emailConfig = {
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-};
-```
-
-## 🚀 Performance Optimization
-
-### Database Optimization
-- **Indexed queries** for fast user lookups
-- **Connection pooling** for efficient database usage
-- **Query optimization** with proper aggregation
-- **Caching** with Redis for session data
-
-### Session Management
-- **Redis-based sessions** for scalability
-- **Session cleanup** for expired tokens
-- **Concurrent session** handling
-- **Session invalidation** on logout
-
-### Rate Limiting
-- **Authentication endpoint** rate limiting
-- **Password reset** request throttling
-- **Login attempt** limiting
-- **API request** throttling
-
-## 🧪 Testing
-
-### Running Tests
-```bash
-# Run all tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run specific test file
-npm test -- --grep "AuthService"
-```
-
-### Test Structure
-- **Unit tests** for service functions
-- **Integration tests** for API endpoints
-- **Authentication tests** for security
-- **Email service tests** for notifications
-
-## 📊 Monitoring & Logging
-
-### Logging System
-- **Structured logging** with timestamps
-- **Error tracking** with stack traces
-- **Authentication events** logging
-- **User activity** tracking
-
-### Health Checks
+#### **Detailed Health Check**
 ```http
-GET /health              # Basic health check
-GET /health/detailed     # Detailed system status
-GET /health/database     # Database connectivity
-GET /health/redis        # Redis connectivity
+GET /health
 ```
 
-## 🚀 Deployment
-
-### Environment Variables
-```env
-# Server Configuration
-PORT=5001
-NODE_ENV=production
-
-# Database
-MONGODB_URI=mongodb://localhost:27017/morpionai-auth
-MONGODB_URI_PROD=mongodb+srv://...
-
-# Redis
-REDIS_URL=redis://localhost:6379
-REDIS_URL_PROD=redis://...
-
-# JWT
-JWT_SECRET=your-super-secret-jwt-key
-JWT_EXPIRES_IN=24h
-JWT_REFRESH_EXPIRES_IN=7d
-
-# Email
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-
-# CORS
-CORS_ORIGIN=http://localhost:3000
-CORS_ORIGIN_PROD=https://yourdomain.com
-
-# Security
-BCRYPT_ROUNDS=12
-RATE_LIMIT_WINDOW=15m
-RATE_LIMIT_MAX=100
-```
-
-### Production Deployment
-```bash
-# Build the application
-npm run build
-
-# Start production server
-npm start
-
-# Using PM2
-pm2 start ecosystem.config.js
-```
-
-## 🔧 Development
-
-### Code Style
-- **ESLint** for code linting
-- **Prettier** for code formatting
-- **JSDoc** for documentation
-- **Consistent naming** conventions
-
-### API Documentation
-- **OpenAPI/Swagger** specification
-- **Endpoint documentation** with examples
-- **Request/response schemas**
-- **Error code documentation**
-
-### Error Message Standards
-All error messages are user-friendly and informative:
-
-```javascript
-// Good error messages
+**Response:**
+```json
 {
-  "error": "Invalid email format",
-  "message": "Please enter a valid email address",
-  "field": "email"
-}
-
-// Bad error messages
-{
-  "error": "Validation failed",
-  "message": "Invalid input"
+  "status": "OK",
+  "service": "Auth API",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "uptime": 123.456
 }
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 
-**Built with ❤️ by the MorpionAi Team**
+## ⚙️ **Configuration**
+
+### **Environment Variables**
+
+Create a `.env` file in the root directory:
+
+```env
+# Server Configuration
+PORT=5001
+NODE_ENV=development
+
+# Database Configuration
+DB=mongodb://localhost:27017/simpleauth
+
+# JWT Configuration
+TOKEN_SECRET=your-super-secret-jwt-key-here
+
+# CORS Configuration (optional)
+ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
+
+# Redis Configuration (optional)
+REDIS_URL=redis://localhost:6379
+
+# Email Configuration (optional)
+SENDGRID_API_KEY=your-sendgrid-api-key
+
+# AWS Configuration (optional)
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_ACCESS_SECRET_KEY=your-aws-secret-key
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=your-s3-bucket-name
+```
+
+### **Default Values**
+- **Port**: 5001
+- **Database**: MongoDB (local or Atlas)
+- **JWT Secret**: Auto-generated if not provided
+- **CORS**: Allows all origins by default
+- **Session Duration**: 15 minutes (access token), 90 days (session)
+
+---
+
+## 🏗️ **Architecture**
+
+### **Project Structure**
+```
+simpleauth-api/
+├── config/
+│   └── index.js              # Centralized configuration
+├── models/
+│   ├── user.js              # User model with validation
+│   └── session.js           # Session model
+├── router/
+│   └── auth.js              # Authentication routes
+├── service/
+│   └── auth/
+│       ├── authApi.js       # Core authentication logic
+│       ├── otpApi.js        # OTP verification
+│       └── secureSession.js # Session management
+├── checkUserSession/
+│   └── checkUserSession.js  # Session validation middleware
+├── emails/
+│   ├── morpionaiWelcome.js  # Welcome email template
+│   ├── newUser.js          # New user email
+│   ├── sendCode.js         # OTP email
+│   └── welcome.js          # Welcome message
+├── redis/
+│   └── redisClient.js      # Redis client configuration
+├── server.js               # Main server file
+└── package.json
+```
+
+### **Data Models**
+
+#### **User Model**
+```javascript
+{
+  email: String (required, unique),
+  password: String (required, hashed),
+  username: String (required, unique),
+  accountType: String (required, default: "email"),
+  firstName: String,
+  lastName: String
+}
+```
+
+#### **Session Model**
+```javascript
+{
+  sessionId: String,
+  userId: String,
+  createdAt: String,
+  expiresAt: String,
+  device: String,
+  location: String
+}
+```
+
+---
+
+## 🔒 **Security Features**
+
+### **Password Security**
+- **bcrypt hashing** with 10 salt rounds
+- **Automatic hashing** on password changes
+- **No plain text storage** of passwords
+
+### **Token Security**
+- **JWT tokens** with configurable expiration
+- **Automatic token refresh** mechanism
+- **HttpOnly cookies** prevent XSS attacks
+- **Secure cookie settings** (SameSite, Secure flags)
+
+### **Session Security**
+- **Session tracking** with device information
+- **Automatic session cleanup** on logout
+- **Session invalidation** on account deletion
+- **Concurrent session** management
+
+### **Input Validation**
+- **Email format validation**
+- **Username uniqueness** checking
+- **Required field validation**
+- **SQL injection** protection via Mongoose
+
+---
+
+## 🚀 **Deployment**
+
+### **Docker Deployment**
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+EXPOSE 5001
+CMD ["npm", "start"]
+```
+
+### **Environment Setup**
+```bash
+# Production environment variables
+NODE_ENV=production
+PORT=5001
+DB=mongodb+srv://username:password@cluster.mongodb.net/simpleauth
+TOKEN_SECRET=your-production-secret-key
+```
+
+### **Cloud Deployment**
+- **Heroku**: Ready to deploy with Procfile
+- **AWS**: Works with ECS, Lambda, or EC2
+- **DigitalOcean**: App Platform compatible
+- **Railway**: One-click deployment
+- **Render**: Automatic deployments
+
+---
+
+## 🧪 **Testing**
+
+### **Manual Testing**
+```bash
+# Test health endpoint
+curl http://localhost:5001/health
+
+# Test registration
+curl -X POST http://localhost:5001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","username":"testuser","password":"password123","accountType":"email","firstName":"Test","lastName":"User"}'
+
+# Test login
+curl -X POST http://localhost:5001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password123","accountType":"email"}'
+```
+
+### **Integration Testing**
+```javascript
+// Example integration test
+const response = await fetch('http://localhost:5001/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'test@example.com',
+    username: 'testuser',
+    password: 'password123',
+    accountType: 'email',
+    firstName: 'Test',
+    lastName: 'User'
+  })
+});
+
+const data = await response.json();
+console.log(data); // Should show successful registration
+```
+
+---
+
+## 🤝 **Contributing**
+
+We love contributions! Here's how you can help:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Commit your changes**: `git commit -m 'Add amazing feature'`
+4. **Push to the branch**: `git push origin feature/amazing-feature`
+5. **Open a Pull Request**
+
+### **Development Setup**
+```bash
+git clone https://github.com/yourusername/simpleauth-api.git
+cd simpleauth-api
+npm install
+npm run dev
+```
+
+---
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 **Acknowledgments**
+
+- **Express.js** for the amazing web framework
+- **MongoDB** for the flexible database
+- **JWT** for secure token management
+- **bcrypt** for password hashing
+- **SendGrid** for email services
+
+---
+
+## 📞 **Support**
+
+- **Documentation**: [GitHub Wiki](https://github.com/yourusername/simpleauth-api/wiki)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/simpleauth-api/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/simpleauth-api/discussions)
+
+---
+
+**⭐ Star this repository if you find it helpful!**
+
+**Built with ❤️ for developers who value simplicity and security.**
