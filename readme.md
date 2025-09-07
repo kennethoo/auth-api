@@ -67,989 +67,315 @@ For this guide, we'll start simple and focus on stateless authentication. Specif
 
 ---
 
-## 📋 **Features**
+## What This API Does
 
-### 🔐 **Core Authentication**
-- ✅ **User Registration** with email verification
-- ✅ **User Login** with email/password
-- ✅ **Secure Logout** with token invalidation
-- ✅ **Session Management** with Redis support
-- ✅ **Token Refresh** for seamless user experience
-- ✅ **Account Deletion** with complete cleanup
+This authentication API handles all the boring but important stuff so you don't have to:
 
-### 🛡️ **Security Features**
-- ✅ **Password Hashing** with bcrypt (10 rounds)
-- ✅ **JWT Tokens** with configurable expiration
-- ✅ **HttpOnly Cookies** for XSS protection
-- ✅ **Secure Session Storage** with device tracking
-- ✅ **OTP Verification** for account creation
-- ✅ **Input Validation** and sanitization
+**User Management:**
+- Register new users with email verification
+- Let users log in with email and password
+- Log users out securely
+- Delete user accounts completely
 
-### 📧 **Email Integration**
-- ✅ **Welcome Emails** for new users
-- ✅ **OTP Verification** via email
-- ✅ **SendGrid Integration** (configurable)
-- ✅ **Customizable Templates**
+**Security (The Important Stuff):**
+- Passwords are automatically hashed so they're never stored in plain text
+- Uses JWT tokens that expire every 15 minutes for security
+- Automatically refreshes tokens so users don't get logged out constantly
+- Stores tokens in secure cookies that can't be stolen by malicious scripts
 
-### 🔧 **Developer Tools**
-- ✅ **Health Check Endpoints**
-- ✅ **Session Management** (view/delete sessions)
-- ✅ **Comprehensive Error Messages**
-- ✅ **CORS Configuration**
-- ✅ **Environment-based Configuration**
+**Email Features:**
+- Sends welcome emails to new users
+- Handles email verification with OTP codes
+- Works with SendGrid (but you can use any email service)
+
+**Developer-Friendly:**
+- Simple health check endpoints to see if everything's working
+- Clear error messages when something goes wrong
+- Easy to integrate with any frontend framework
 
 ---
 
-## 🧠 **How It Works**
+## How It Actually Works
 
-### **High-Level System Overview**
+Let's break down what happens when someone uses your app:
 
-The Auth API is a **stateless microservice** that handles user authentication through a secure, token-based system. Here's how it works:
+### When Someone Registers
 
-#### **🔐 Core Authentication Flow**
+1. **User fills out a form** with their email, username, and password
+2. **Your frontend sends this data** to `/api/auth/register`
+3. **The API checks** if the email or username is already taken
+4. **If everything looks good**, it:
+   - Hashes the password (so it's never stored in plain text)
+   - Saves the user to the database
+   - Creates a JWT token (like a temporary ID card)
+   - Sends the token back in a secure cookie
 
-```mermaid
-graph TD
-    A[User Registration/Login] --> B[Validate Credentials]
-    B --> C[Generate JWT Access Token]
-    C --> D[Create Secure Session]
-    D --> E[Store in HttpOnly Cookies]
-    E --> F[Return Success Response]
-    
-    G[API Request] --> H[Extract Token from Cookie/Header]
-    H --> I[Validate JWT Token]
-    I --> J{Token Valid?}
-    J -->|Yes| K[Allow Access]
-    J -->|No| L[Try Token Refresh]
-    L --> M{Refresh Success?}
-    M -->|Yes| N[Generate New Token & Allow Access]
-    M -->|No| O[Deny Access - Require Login]
-```
+### When Someone Logs In
 
-#### **📋 Diagram Explanation - The Complete User Journey**
+1. **User enters their email and password**
+2. **Your frontend sends this** to `/api/auth/login`
+3. **The API finds the user** by email
+4. **It checks if the password matches** (using the hashed version)
+5. **If it's correct**, it creates a new JWT token and sends it back
 
-Let me walk you through exactly what happens when someone uses your app:
+### When Someone Uses Your App
 
-**🟢 PART 1: User Registration**
+1. **Every time they make a request**, the browser automatically sends the JWT token
+2. **Your API checks if the token is valid** and not expired
+3. **If it's good**, the request goes through
+4. **If it's expired**, the API tries to refresh it automatically
+5. **If it can't refresh**, the user needs to log in again
 
-**Step A → B: User Registration Request**
-- User visits your website and fills out the registration form (email, username, password, firstName, lastName)
-- Frontend app sends registration data to `/api/auth/register` endpoint
-- API receives the registration request
+### Why This Is Secure
 
-**Step B → C: Registration Validation**
-- API validates required fields (email, username, accountType)
-- Checks if email already exists in the database
-- Checks if username is already taken
-- Validates email format and password strength
-- Returns validation result with appropriate error messages
+- **Passwords are hashed**: Even if someone gets your database, they can't see actual passwords
+- **Tokens expire quickly**: If someone steals a token, it only works for 15 minutes
+- **Automatic refresh**: Users don't get logged out constantly, but tokens stay secure
+- **Secure cookies**: Tokens are stored in cookies that malicious scripts can't access
 
 ---
 
-**🔵 PART 2: User Login**
+## Code Examples
 
-**Step A → B: User Login Request**
-- User enters their email and password on the login form
-- Frontend app sends login credentials to `/api/auth/login` endpoint
-- API receives the login request
+Here's how to actually use this API in your app:
 
-**Step B → C: Login Validation**
-- API finds user by email in the database
-- Verifies password hash against stored hash using bcrypt
-- Checks if account type matches (email vs other types)
-- Returns validation result with appropriate error messages
+### Register a New User
 
-**Step C → D: Token Generation (Both Registration & Login)**
-- Generates JWT access token with 15-minute expiration
-- Creates session record in database with 90-day expiration
-- Includes user data in token payload (email, userId, username, etc.)
-
-**Step D → E: Cookie Configuration**
-- Sets HttpOnly cookies containing access token and session ID
-- Configures secure cookie settings (HttpOnly, Secure, SameSite)
-- Browser automatically includes cookies in subsequent requests
-
-**Step E → F: Response**
-- Returns success response with authentication status
-- User session is established and ready for API requests
-
----
-
-**🟡 PART 3: User Uses Your App (Making API Calls)**
-
-**Step G → H: API Request Processing**
-- Client makes authenticated API request with cookies
-- Server extracts access token from HttpOnly cookie or Authorization header
-- Request includes session context for validation
-
-**Step H → I: Token Validation**
-- Server validates JWT signature and expiration
-- Verifies token integrity and user permissions
-- Checks token against current timestamp
-
-**Step I → J: Token Status Check**
-- **Valid** → Grant access to protected resource (Step K)
-- **Invalid/Expired** → Attempt token refresh using session ID (Step L)
-
-**Step L → M: Session Validation**
-- Validates session ID against database records
-- Checks session expiration and user status
-- **Valid Session** → Generate new access token and continue (Step N)
-- **Invalid Session** → Require re-authentication (Step O)
-
----
-
-**🔑 Security Benefits:**
-
-- **Short-lived access tokens** (15min): Limits exposure window if compromised
-- **Long-lived sessions** (90 days): Reduces authentication frequency
-- **Automatic token refresh**: Seamless user experience without re-login
-- **HttpOnly cookies**: Prevents XSS-based token theft
-- **Stateless architecture**: Enables horizontal scaling and load balancing
-
-#### **🛡️ Security Architecture**
-
-1. **Password Security**: All passwords are hashed using bcrypt with 10 salt rounds
-2. **Token Management**: JWT access tokens (15min) + refresh tokens (90 days)
-3. **Session Storage**: Secure sessions stored in MongoDB with device tracking
-4. **Cookie Security**: HttpOnly, Secure, SameSite cookies prevent XSS/CSRF
-5. **OTP Verification**: Email-based verification for account creation
-
-#### **📊 Data Flow**
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Auth API      │    │   Database      │
-│   Application   │    │   (Node.js)     │    │   (MongoDB)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │ 1. Register/Login     │                       │
-         ├──────────────────────►│                       │
-         │                       │ 2. Hash Password      │
-         │                       ├──────────────────────►│
-         │                       │ 3. Store User Data    │
-         │                       ├──────────────────────►│
-         │                       │ 4. Generate JWT       │
-         │                       │                       │
-         │ 5. Return Tokens      │                       │
-         │◄──────────────────────┤                       │
-         │                       │                       │
-         │ 6. Store in Cookies   │                       │
-         │                       │                       │
-         │ 7. API Requests       │                       │
-         ├──────────────────────►│                       │
-         │                       │ 8. Validate JWT       │
-         │                       │                       │
-         │ 9. Allow/Deny Access  │                       │
-         │◄──────────────────────┤                       │
-```
-
----
-
-## 📝 **Detailed Examples**
-
-### **🔐 User Registration Flow**
-
-Let's walk through exactly what happens when a user registers:
-
-#### **Step 1: User Sends Registration Request**
 ```javascript
-// Frontend sends this request
-const registrationData = {
-  email: "john@example.com",
-  username: "johndoe", 
-  password: "mypassword123",
-  accountType: "email",
-  firstName: "John",
-  lastName: "Doe"
-};
-
-fetch('/api/auth/register', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(registrationData)
-});
-```
-
-#### **Step 2: Server Validates Input**
-```javascript
-// Auth API validates the data
-async registerUser(userData) {
-  // 1. Check required fields
-  if (!email || !username || !accountType) {
-    return { succeeded: false, errorMessage: "Missing required fields" };
-  }
-  
-  // 2. Check if email already exists
-  const isEmailTaken = await User.findOne({ email });
-  if (isEmailTaken) {
-    return { succeeded: false, errorMessage: "Email already registered" };
-  }
-  
-  // 3. Check if username already exists
-  const isUsernameTaken = await User.findOne({ username });
-  if (isUsernameTaken) {
-    return { succeeded: false, errorMessage: "Username already taken" };
-  }
-}
-```
-
-#### **Step 3: Password Hashing**
-```javascript
-// User model automatically hashes password before saving
-userSchema.pre("save", function (next) {
-  const user = this;
-  if (user.isModified('password')) {
-    bcrypt.hash(user.password, 10, (error, hash) => {
-      if (error) return next(error);
-      user.password = hash; // Store hashed password
-      next();
-    });
-  } else {
-    next();
-  }
-});
-```
-
-#### **Step 4: User Creation & Welcome Email**
-```javascript
-// Create user in database
-const user = await User.create({ ...userData });
-
-// Send welcome email
-await sendMorpionAIWelcomeEmail({
-  email: user.email,
-  username: user.username
-});
-
-// Auto-login the user after registration
-const loginResult = await this.logUserIn(userData);
-```
-
-#### **Step 5: Generate Secure Session**
-```javascript
-// Create JWT access token (15 minutes)
-const accessToken = jwt.sign({
-  email: user.email,
-  userId: user._id,
-  firstName: user.firstName,
-  lastName: user.lastName,
-  username: user.username
-}, process.env.TOKEN_SECRET, { expiresIn: "15m" });
-
-// Create session ID (90 days)
-const sessionId = crypto.randomUUID();
-
-// Store session in database
-await SecureSession.create({
-  sessionId,
-  userId: user._id,
-  createdAt: new Date().toISOString(),
-  expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
-});
-```
-
-#### **Step 6: Set Secure Cookies**
-```javascript
-// Set HttpOnly cookies (XSS protection)
-res.cookie("access_token", accessToken, {
-  httpOnly: true,    // Can't be accessed by JavaScript
-  secure: true,      // Only sent over HTTPS
-  sameSite: "None",  // CSRF protection
-  path: "/",
-  maxAge: 15 * 60 * 1000 // 15 minutes
-});
-
-res.cookie("session_id", sessionId, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "None", 
-  path: "/",
-  maxAge: 90 * 24 * 60 * 60 * 1000 // 90 days
-});
-```
-
-#### **Step 7: Return Success Response**
-```json
-{
-  "succeeded": true,
-  "isLogIn": true,
-  "secureSession": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "sessionId": "550e8400-e29b-41d4-a716-446655440000"
-  }
-}
-```
-
----
-
-### **🔑 User Login Flow**
-
-Now let's see what happens when a user logs in:
-
-#### **Step 1: User Sends Login Request**
-```javascript
-const loginData = {
-  email: "john@example.com",
-  password: "mypassword123", 
-  accountType: "email"
-};
-
-fetch('/api/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(loginData)
-});
-```
-
-#### **Step 2: Server Validates Credentials**
-```javascript
-async logUserWithEmail(userLoginData) {
-  const { email, password } = userLoginData;
-  
-  // 1. Find user by email
-  const userAccount = await User.findOne({ email });
-  if (!userAccount) {
-    return { isLogIn: false, errorMessage: "No account found with this email" };
-  }
-  
-  // 2. Verify password
-  const isSamePassword = await bcrypt.compare(password, userAccount.password);
-  if (!isSamePassword) {
-    return { isLogIn: false, errorMessage: "Incorrect password" };
-  }
-  
-  // 3. Generate new session
-  return this.logUserInUsingJWT({
-    email: userAccount.email,
-    userId: userAccount._id,
-    firstName: userAccount.firstName,
-    lastName: userAccount.lastName,
-    username: userAccount.username
-  });
-}
-```
-
-#### **Step 3: Generate New Session & Tokens**
-```javascript
-// Same process as registration - generate JWT and session
-const accessToken = jwt.sign(userData, process.env.TOKEN_SECRET, { expiresIn: "15m" });
-const sessionId = crypto.randomUUID();
-
-// Store session in database
-await SecureSession.create({ sessionId, userId, ... });
-```
-
-#### **Step 4: Set Cookies & Return Response**
-```javascript
-// Set secure cookies and return success
-res.cookie("access_token", accessToken, secureConfig);
-res.cookie("session_id", sessionId, sessionConfig);
-res.json({ isLogIn: true, secureSession: { accessToken, sessionId } });
-```
-
----
-
-### **🔍 Session Validation Flow**
-
-Here's how the API validates user sessions on each request:
-
-#### **Step 1: Extract Token**
-```javascript
-// Middleware extracts token from cookie or header
-const accessToken = req.headers["x-access-token"] || req.cookies?.access_token;
-const sessionId = req.headers["x-session-id"] || req.cookies?.session_id;
-```
-
-#### **Step 2: Validate Access Token**
-```javascript
-async getUserFromAccessToken(access_token) {
-  try {
-    // Verify JWT signature and expiration
-    const user = jwt.verify(access_token, process.env.TOKEN_SECRET);
-    return user; // Token is valid
-  } catch (error) {
-    console.error('JWT verification error:', error.message);
-    return null; // Token is invalid or expired
-  }
-}
-```
-
-#### **Step 3: Try Token Refresh (if access token fails)**
-```javascript
-async refreshSecureToken(sessionId) {
-  // 1. Check if session exists and is valid
-  const session = await SecureSession.findOne({ sessionId });
-  if (!session || new Date() > new Date(session.expiresAt)) {
-    return { isTokenRefresh: false };
-  }
-  
-  // 2. Get user data
-  const user = await User.findById(session.userId);
-  if (!user) {
-    return { isTokenRefresh: false };
-  }
-  
-  // 3. Generate new access token
-  const newAccessToken = jwt.sign({
-    email: user.email,
-    userId: user._id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    username: user.username
-  }, process.env.TOKEN_SECRET, { expiresIn: "15m" });
-  
-  return { isTokenRefresh: true, accessToken: newAccessToken };
-}
-```
-
-#### **Step 4: Allow or Deny Access**
-```javascript
-// If token is valid or refresh succeeded
-if (user || refreshResult.isTokenRefresh) {
-  req.user = user || refreshedUser;
-  return next(); // Allow access to protected route
-} else {
-  return res.status(401).json({ isLogin: false }); // Deny access
-}
-```
-
----
-
-### **🛡️ Security Features in Action**
-
-#### **Password Hashing**
-```javascript
-// Before saving to database
-const hashedPassword = await bcrypt.hash("mypassword123", 10);
-// Result: "$2a$10$N9qo8uLOickgx2ZMRZoMye..."
-
-// During login verification
-const isValid = await bcrypt.compare("mypassword123", hashedPassword);
-// Result: true
-```
-
-#### **JWT Token Structure**
-```javascript
-// Access Token Payload
-{
-  "email": "john@example.com",
-  "userId": "507f1f77bcf86cd799439011",
-  "firstName": "John",
-  "lastName": "Doe", 
-  "username": "johndoe",
-  "iat": 1640995200,  // Issued at
-  "exp": 1640996100   // Expires at (15 minutes)
-}
-```
-
-#### **Session Storage**
-```javascript
-// Session document in MongoDB
-{
-  "_id": "507f1f77bcf86cd799439012",
-  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
-  "userId": "507f1f77bcf86cd799439011",
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "expiresAt": "2024-04-01T00:00:00.000Z",
-  "device": "Mozilla/5.0...",
-  "location": "192.168.1.1"
-}
-```
-
----
-
-## 🚀 **Quick Start**
-
-### **1. Clone & Install**
-   ```bash
-git clone https://github.com/yourusername/auth-api.git
-cd auth-api
-   npm install
-   ```
-
-### **2. Configure Environment**
-   ```bash
-   cp .env.example .env
-# Edit .env with your settings (optional - works with defaults!)
-   ```
-
-### **3. Start the Server**
-   ```bash
-   # Development
-   npm run dev
-   
-   # Production
-   npm start
-   ```
-
-### **4. Test It Works**
-```bash
-curl http://localhost:5001/health
-# Should return: {"status":"OK","service":"Auth API","timestamp":"..."}
-```
-
-**That's it! Your auth service is running! 🎉**
-
----
-
-## 📚 **API Documentation**
-
-### **Base URL**
-```
-http://localhost:5001
-```
-
-### **Authentication Endpoints**
-
-#### **Register User**
-```http
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "username": "johndoe",
-  "password": "securepassword123",
-  "accountType": "email",
-  "firstName": "John",
-  "lastName": "Doe"
-}
-```
-
-**Response:**
-```json
-{
-  "succeeded": true,
-  "isLogIn": true,
-  "secureSession": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "sessionId": "uuid-session-id"
-  }
-}
-```
-
-#### **Login User**
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "securepassword123",
-  "accountType": "email"
-}
-```
-
-**Response:**
-```json
-{
-  "isLogIn": true,
-  "secureSession": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "sessionId": "uuid-session-id"
-  }
-}
-```
-
-#### **Check Login Status**
-```http
-GET /api/auth/check-login
-Authorization: Bearer <access-token>
-# OR
-# Cookies: access_token and session_id
-```
-
-**Response:**
-```json
-{
-  "isLogIn": true,
-  "user": {
-    "email": "user@example.com",
-    "userId": "user-id",
-    "username": "johndoe",
-    "firstName": "John",
-    "lastName": "Doe"
-  }
-}
-```
-
-#### **Logout**
-```http
-POST /api/auth/logout
-Authorization: Bearer <access-token>
-# OR
-# Cookies: access_token and session_id
-```
-
-**Response:**
-```json
-{
-  "message": "Logged out"
-}
-```
-
-#### **Refresh Token**
-```http
-POST /api/auth/secure/token/refresh
-Authorization: Bearer <access-token>
-# OR
-# Cookies: session_id
-```
-
-**Response:**
-```json
-{
-  "isTokenRefresh": true,
-  "accessToken": "new-access-token"
-}
-```
-
-#### **Delete Account**
-```http
-POST /api/auth/delete/account
-Authorization: Bearer <access-token>
-```
-
-**Response:**
-```json
-{
-  "succeeded": true
-}
-```
-
-### **Email Verification Endpoints**
-
-#### **Request Account Creation (OTP)**
-```http
-POST /api/auth/requestaccountcreation
-Content-Type: application/json
-
-{
-  "email": "user@example.com"
-}
-```
-
-**Response:**
-```json
-{
-  "succeeded": true,
-  "otpTokenId": "uuid-otp-token-id"
-}
-```
-
-#### **Validate Email (OTP)**
-```http
-POST /api/auth/validateuseremail
-Content-Type: application/json
-
-{
-  "otpTokenId": "uuid-otp-token-id",
-  "code": 123456
-}
-```
-
-**Response:**
-```json
-{
-  "succeeded": true
-}
-```
-
-### **Session Management**
-
-#### **Get User Sessions**
-```http
-GET /api/auth/sessions
-Authorization: Bearer <access-token>
-```
-
-#### **Remove Session**
-```http
-POST /api/auth/remove/session
-Authorization: Bearer <access-token>
-Content-Type: application/json
-
-{
-  "id": "session-id-to-remove"
-}
-```
-
-### **Health Check**
-
-#### **Basic Health Check**
-```http
-GET /
-```
-
-**Response:**
-```json
-{
-  "status": "OK",
-  "service": "Auth API",
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
-```
-
-#### **Detailed Health Check**
-```http
-GET /health
-```
-
-**Response:**
-```json
-{
-  "status": "OK",
-  "service": "Auth API",
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "uptime": 123.456
-}
-```
-
----
-
-## ⚙️ **Configuration**
-
-### **Environment Variables**
-
-Create a `.env` file in the root directory:
-
-```env
-# Server Configuration
-PORT=5001
-NODE_ENV=development
-
-# Database Configuration
-DB=mongodb://localhost:27017/auth-api
-
-# JWT Configuration
-TOKEN_SECRET=your-super-secret-jwt-key-here
-
-# CORS Configuration (optional)
-ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
-
-# Redis Configuration (optional)
-REDIS_URL=redis://localhost:6379
-
-# Email Configuration (optional)
-SENDGRID_API_KEY=your-sendgrid-api-key
-
-# AWS Configuration (optional)
-AWS_ACCESS_KEY_ID=your-aws-access-key
-AWS_ACCESS_SECRET_KEY=your-aws-secret-key
-AWS_REGION=us-east-1
-AWS_S3_BUCKET=your-s3-bucket-name
-```
-
-### **Default Values**
-- **Port**: 5001
-- **Database**: MongoDB (local or Atlas)
-- **JWT Secret**: Auto-generated if not provided
-- **CORS**: Allows all origins by default
-- **Session Duration**: 15 minutes (access token), 90 days (session)
-
----
-
-## 🏗️ **Architecture**
-
-### **Project Structure**
-```
-auth-api/
-├── config/
-│   └── index.js              # Centralized configuration
-├── models/
-│   ├── user.js              # User model with validation
-│   └── session.js           # Session model
-├── router/
-│   └── auth.js              # Authentication routes
-├── service/
-│   └── auth/
-│       ├── authApi.js       # Core authentication logic
-│       ├── otpApi.js        # OTP verification
-│       └── secureSession.js # Session management
-├── checkUserSession/
-│   └── checkUserSession.js  # Session validation middleware
-├── emails/
-│   ├── morpionaiWelcome.js  # Welcome email template
-│   ├── newUser.js          # New user email
-│   ├── sendCode.js         # OTP email
-│   └── welcome.js          # Welcome message
-├── redis/
-│   └── redisClient.js      # Redis client configuration
-├── server.js               # Main server file
-└── package.json
-```
-
-### **Data Models**
-
-#### **User Model**
-```javascript
-{
-  email: String (required, unique),
-  password: String (required, hashed),
-  username: String (required, unique),
-  accountType: String (required, default: "email"),
-  firstName: String,
-  lastName: String
-}
-```
-
-#### **Session Model**
-```javascript
-{
-  sessionId: String,
-  userId: String,
-  createdAt: String,
-  expiresAt: String,
-  device: String,
-  location: String
-}
-```
-
----
-
-## 🔒 **Security Features**
-
-### **Password Security**
-- **bcrypt hashing** with 10 salt rounds
-- **Automatic hashing** on password changes
-- **No plain text storage** of passwords
-
-### **Token Security**
-- **JWT tokens** with configurable expiration
-- **Automatic token refresh** mechanism
-- **HttpOnly cookies** prevent XSS attacks
-- **Secure cookie settings** (SameSite, Secure flags)
-
-### **Session Security**
-- **Session tracking** with device information
-- **Automatic session cleanup** on logout
-- **Session invalidation** on account deletion
-- **Concurrent session** management
-
-### **Input Validation**
-- **Email format validation**
-- **Username uniqueness** checking
-- **Required field validation**
-- **SQL injection** protection via Mongoose
-
----
-
-## 🚀 **Deployment**
-
-### **Docker Deployment**
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 5001
-CMD ["npm", "start"]
-```
-
-### **Environment Setup**
-```bash
-# Production environment variables
-NODE_ENV=production
-PORT=5001
-DB=mongodb+srv://username:password@cluster.mongodb.net/auth-api
-TOKEN_SECRET=your-production-secret-key
-```
-
-### **Cloud Deployment**
-- **Heroku**: Ready to deploy with Procfile
-- **AWS**: Works with ECS, Lambda, or EC2
-- **DigitalOcean**: App Platform compatible
-- **Railway**: One-click deployment
-- **Render**: Automatic deployments
-
----
-
-## 🧪 **Testing**
-
-### **Manual Testing**
-```bash
-# Test health endpoint
-curl http://localhost:5001/health
-
-# Test registration
-curl -X POST http://localhost:5001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","username":"testuser","password":"password123","accountType":"email","firstName":"Test","lastName":"User"}'
-
-# Test login
-curl -X POST http://localhost:5001/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123","accountType":"email"}'
-```
-
-### **Integration Testing**
-```javascript
-// Example integration test
-const response = await fetch('http://localhost:5001/api/auth/register', {
+// Send this from your frontend
+const response = await fetch('/api/auth/register', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    email: 'test@example.com',
-    username: 'testuser',
-    password: 'password123',
+    email: 'john@example.com',
+    username: 'johndoe',
+    password: 'mypassword123',
     accountType: 'email',
-    firstName: 'Test',
-    lastName: 'User'
+    firstName: 'John',
+    lastName: 'Doe'
   })
 });
 
 const data = await response.json();
-console.log(data); // Should show successful registration
+// If successful, user is automatically logged in
+console.log(data.isLogIn); // true
 ```
+
+### Log In a User
+
+```javascript
+const response = await fetch('/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'john@example.com',
+    password: 'mypassword123',
+    accountType: 'email'
+  })
+});
+
+const data = await response.json();
+console.log(data.isLogIn); // true if successful
+```
+
+### Check if User is Logged In
+
+```javascript
+// This automatically uses the cookies, no need to send anything
+const response = await fetch('/api/auth/check-login');
+const data = await response.json();
+
+if (data.isLogIn) {
+  console.log('User is logged in:', data.user);
+} else {
+  console.log('User needs to log in');
+}
+```
+
+### Log Out a User
+
+```javascript
+const response = await fetch('/api/auth/logout', {
+  method: 'POST'
+});
+// User is now logged out
+```
+
+### What Happens Behind the Scenes
+
+When you register or log in, the API:
+
+1. **Validates the data** (checks if email/username is taken, password is strong enough)
+2. **Hashes the password** using bcrypt (so it's never stored in plain text)
+3. **Creates a JWT token** that contains the user's info and expires in 15 minutes
+4. **Stores the token in a secure cookie** that your browser automatically sends with every request
+5. **Sends back a success response** with the user's info
+
+When you make API requests, the API:
+
+1. **Looks for the JWT token** in the cookies
+2. **Checks if it's valid** and not expired
+3. **If it's expired**, tries to refresh it automatically
+4. **If everything's good**, lets the request through
+5. **If not**, asks the user to log in again
 
 ---
 
-## 🤝 **Contributing**
+## Getting Started
 
-We love contributions! Here's how you can help:
+### 1. Install and Run
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Commit your changes**: `git commit -m 'Add amazing feature'`
-4. **Push to the branch**: `git push origin feature/amazing-feature`
-5. **Open a Pull Request**
-
-### **Development Setup**
 ```bash
 git clone https://github.com/yourusername/auth-api.git
 cd auth-api
 npm install
-npm run dev
+npm start
 ```
 
+That's it! Your auth service is running on `http://localhost:5001`
+
+### 2. Test It's Working
+
+```bash
+curl http://localhost:5001/health
+```
+
+You should see: `{"status":"OK","service":"Auth API","timestamp":"..."}`
+
+## API Reference
+
+**Base URL:** `http://localhost:5001`
+
+### Main Endpoints
+
+**Register a user:**
+```http
+POST /api/auth/register
+```
+Send: `{ email, username, password, accountType, firstName, lastName }`
+
+**Log in:**
+```http
+POST /api/auth/login
+```
+Send: `{ email, password, accountType }`
+
+**Check if logged in:**
+```http
+GET /api/auth/check-login
+```
+Returns: `{ isLogIn: true/false, user: {...} }`
+
+**Log out:**
+```http
+POST /api/auth/logout
+```
+
+**Delete account:**
+```http
+POST /api/auth/delete/account
+```
+
+### Email Verification (Optional)
+
+**Request verification code:**
+```http
+POST /api/auth/requestaccountcreation
+```
+Send: `{ email }`
+
+**Verify with code:**
+```http
+POST /api/auth/validateuseremail
+```
+Send: `{ otpTokenId, code }`
+
+### Health Check
+
+```http
+GET /health
+```
+Returns: `{ status: "OK", service: "Auth API", ... }`
+
 ---
 
-## 📄 **License**
+## Configuration
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Environment Variables (Optional)
+
+You can create a `.env` file to customize settings, but it works with defaults:
+
+```env
+# The only one you might want to change
+PORT=5001
+
+# Database (works with local MongoDB by default)
+DB=mongodb://localhost:27017/auth-api
+
+# JWT secret (auto-generated if not provided)
+TOKEN_SECRET=your-secret-key-here
+
+# Email (optional - for sending welcome emails)
+SENDGRID_API_KEY=your-sendgrid-key
+```
+
+### What's Inside
+
+The code is organized simply:
+
+- **`server.js`** - Main file that starts everything
+- **`router/auth.js`** - All the API endpoints
+- **`service/auth/`** - The actual authentication logic
+- **`models/`** - Database schemas for users and sessions
+- **`emails/`** - Email templates
+
+### Security Features
+
+- **Passwords are hashed** with bcrypt (industry standard)
+- **JWT tokens expire** every 15 minutes for security
+- **Automatic token refresh** so users don't get logged out
+- **Secure cookies** that can't be accessed by malicious scripts
+- **Input validation** to prevent bad data
 
 ---
 
-## 🙏 **Acknowledgments**
+## Deploying Your API
 
-- **Express.js** for the amazing web framework
-- **MongoDB** for the flexible database
-- **JWT** for secure token management
-- **bcrypt** for password hashing
-- **SendGrid** for email services
+### Easy Deployment Options
 
----
+**Heroku (Recommended):**
+1. Connect your GitHub repo to Heroku
+2. Add a MongoDB database (MongoDB Atlas works great)
+3. Set your environment variables
+4. Deploy!
 
-## 📞 **Support**
+**Other Options:**
+- **Railway** - One-click deployment
+- **Render** - Automatic deployments
+- **DigitalOcean** - App Platform
+- **AWS** - ECS or Lambda
 
-- **Documentation**: [GitHub Wiki](https://github.com/yourusername/auth-api/wiki)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/auth-api/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/auth-api/discussions)
+### Testing Your API
 
----
+**Quick test:**
+```bash
+curl http://localhost:5001/health
+```
 
-**⭐ Star this repository if you find it helpful!**
+**Test registration:**
+```bash
+curl -X POST http://localhost:5001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","username":"testuser","password":"password123","accountType":"email","firstName":"Test","lastName":"User"}'
+```
 
-**Built with ❤️ for developers who value simplicity and security.**
+## That's It!
+
+You now have a complete authentication system that handles:
+- User registration and login
+- Secure password storage
+- JWT token management
+- Session handling
+- Email verification
+
+**Built with ❤️ for developers who want authentication that just works.**
