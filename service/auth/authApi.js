@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { oTPApi } from "./otpApi.js";
 import sendCode from "../../emails/sendCode.js";
-import sendMorpionAIWelcomeEmail from "../../emails/morpionaiWelcome.js";
 import { secureSessionApi } from "./secureSession.js";
 import User from "../../models/user.js";
 
@@ -78,16 +77,6 @@ class AuthApi {
 
     const user = await User.create({ ...userData });
     
-    // Send welcome email to the new user
-    try {
-      await sendMorpionAIWelcomeEmail({
-        email: user.email,
-        username: user.username
-      });
-    } catch (error) {
-      console.error('Error sending welcome email:', error);
-      // Don't fail registration if email fails
-    }
     
     return {
       succeeded: true,

@@ -84,7 +84,6 @@ This authentication API handles all the boring but important stuff so you don't 
 - Stores tokens in secure cookies that can't be stolen by malicious scripts
 
 **Email Features:**
-- Sends welcome emails to new users
 - Handles email verification with OTP codes
 - Works with SendGrid (but you can use any email service)
 
@@ -410,16 +409,17 @@ You can create a `.env` file to customize settings, but it works with defaults:
 
 ```env
 # The only one you might want to change
-PORT=5001
+PORT=9000
 
 # Database (works with local MongoDB by default)
-DB=mongodb://localhost:27017/auth-api
+DB=mongodb://localhost:27017
 
 # JWT secret (auto-generated if not provided)
 TOKEN_SECRET=your-secret-key-here
 
-# Email (optional - for sending welcome emails)
+# Email (optional - for OTP verification)
 SENDGRID_API_KEY=your-sendgrid-key
+FROM_EMAIL=noreply@yourapp.com
 ```
 
 ### What's Inside
@@ -431,7 +431,7 @@ The code is organized simply:
 - **`service/auth/`** - The actual authentication logic
 - **`checkUserSession/`** - Middleware that validates user sessions
 - **`models/`** - Database schemas for users and sessions
-- **`emails/`** - Email templates
+- **`emails/`** - OTP verification email templates
 
 ### Security Features
 
@@ -480,6 +480,6 @@ You now have a complete authentication system that handles:
 - Secure password storage
 - JWT token management
 - Session handling
-- Email verification
+- OTP email verification
 
 **Built with ❤️ for developers who want authentication that just works.**

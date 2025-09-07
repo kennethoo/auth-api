@@ -6,15 +6,15 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 function sendCode({ code, email }) {
   const msg = {
     to: email,
-    from: "info@morpionai.com",
-    subject: "Your MorpionAI Verification Code",
-    text: `Your MorpionAI verification code is: ${code}`,
+    from: process.env.FROM_EMAIL || "noreply@yourapp.com",
+    subject: "Your Verification Code",
+    text: `Your verification code is: ${code}`,
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MorpionAI Verification Code</title>
+    <title>Verification Code</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -154,14 +154,14 @@ function sendCode({ code, email }) {
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo"> MorpionAI</div>
+            <div class="logo">Your App</div>
             <div class="tagline"></div>
         </div>
         
         <div class="content">
             <h1 class="title">Verify Your Account</h1>
             <p class="description">
-                Welcome to MorpionAI! To complete your registration and start playing Tic-Tac-Toe against other players, please use the verification code below:
+                Welcome! To complete your registration, please use the verification code below:
             </p>
             
             <div class="code-container">
@@ -175,7 +175,7 @@ function sendCode({ code, email }) {
         
         <div class="footer">
             <p class="footer-text">
-                © 2024 MorpionAI. All rights reserved.<br>
+                © 2024 Your App. All rights reserved.<br>
                 This email was sent to ${email}
             </p>
             <div class="social-links">
