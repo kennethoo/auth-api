@@ -1,4 +1,4 @@
-# 🔐 SimpleAuth API
+# 🔐 Auth API
 
 **The simplest, most powerful authentication microservice you'll ever use!**
 
@@ -12,12 +12,12 @@ A production-ready, zero-configuration authentication API built with Node.js and
 
 ---
 
-## 🚀 **Why SimpleAuth API?**
+## 🚀 **Why Auth API?**
 
 ### **⚡ Lightning Fast Setup**
 ```bash
-git clone https://github.com/yourusername/simpleauth-api.git
-cd simpleauth-api
+git clone https://github.com/yourusername/auth-api.git
+cd auth-api
 npm install
 npm start
 # That's it! Your auth service is running! 🎉
@@ -122,26 +122,26 @@ const loginResponse = await fetch('/api/auth/login', {
 ## 🚀 **Quick Start**
 
 ### **1. Clone & Install**
-```bash
-git clone https://github.com/yourusername/simpleauth-api.git
-cd simpleauth-api
-npm install
-```
+   ```bash
+git clone https://github.com/yourusername/auth-api.git
+cd auth-api
+   npm install
+   ```
 
 ### **2. Configure Environment**
-```bash
-cp .env.example .env
+   ```bash
+   cp .env.example .env
 # Edit .env with your settings (optional - works with defaults!)
-```
+   ```
 
 ### **3. Start the Server**
-```bash
-# Development
-npm run dev
-
-# Production
-npm start
-```
+   ```bash
+   # Development
+   npm run dev
+   
+   # Production
+   npm start
+   ```
 
 ### **4. Test It Works**
 ```bash
@@ -380,7 +380,7 @@ PORT=5001
 NODE_ENV=development
 
 # Database Configuration
-DB=mongodb://localhost:27017/simpleauth
+DB=mongodb://localhost:27017/auth-api
 
 # JWT Configuration
 TOKEN_SECRET=your-super-secret-jwt-key-here
@@ -414,7 +414,7 @@ AWS_S3_BUCKET=your-s3-bucket-name
 
 ### **Project Structure**
 ```
-simpleauth-api/
+auth-api/
 ├── config/
 │   └── index.js              # Centralized configuration
 ├── models/
@@ -513,7 +513,7 @@ CMD ["npm", "start"]
 # Production environment variables
 NODE_ENV=production
 PORT=5001
-DB=mongodb+srv://username:password@cluster.mongodb.net/simpleauth
+DB=mongodb+srv://username:password@cluster.mongodb.net/auth-api
 TOKEN_SECRET=your-production-secret-key
 ```
 
@@ -578,8 +578,8 @@ We love contributions! Here's how you can help:
 
 ### **Development Setup**
 ```bash
-git clone https://github.com/yourusername/simpleauth-api.git
-cd simpleauth-api
+git clone https://github.com/yourusername/auth-api.git
+cd auth-api
 npm install
 npm run dev
 ```
@@ -604,9 +604,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 **Support**
 
-- **Documentation**: [GitHub Wiki](https://github.com/yourusername/simpleauth-api/wiki)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/simpleauth-api/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/simpleauth-api/discussions)
+- **Documentation**: [GitHub Wiki](https://github.com/yourusername/auth-api/wiki)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/auth-api/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/auth-api/discussions)
 
 ---
 
