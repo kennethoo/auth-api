@@ -145,6 +145,34 @@ graph TD
     M -->|No| O[Deny Access - Require Login]
 ```
 
+#### **📋 Diagram Explanation**
+
+This diagram shows the **complete authentication lifecycle** in two main phases:
+
+**🟢 Phase 1: Initial Authentication (Registration/Login)**
+- **A → B**: User submits credentials (email/password) or registration data
+- **B → C**: Server validates the credentials (checks email exists, verifies password hash)
+- **C → D**: If valid, server generates a JWT access token (15-minute expiration)
+- **D → E**: Server creates a secure session record in the database (90-day expiration)
+- **E → F**: Server stores both tokens in HttpOnly cookies and returns success response
+
+**🔵 Phase 2: Ongoing API Requests (Session Validation)**
+- **G → H**: Every API request extracts the access token from cookies or Authorization header
+- **H → I**: Server validates the JWT token (checks signature and expiration)
+- **I → J**: Decision point: Is the token valid and not expired?
+  - **Yes → K**: Allow access to the protected resource
+  - **No → L**: Try to refresh the token using the session ID
+- **L → M**: Decision point: Can we refresh the token?
+  - **Yes → N**: Generate a new access token and allow access
+  - **No → O**: Deny access and require user to log in again
+
+**🔑 Key Security Benefits:**
+- **Short-lived access tokens** (15min) limit exposure if compromised
+- **Long-lived sessions** (90 days) provide seamless user experience
+- **Automatic token refresh** prevents unnecessary re-logins
+- **HttpOnly cookies** prevent XSS attacks
+- **Stateless design** allows horizontal scaling
+
 #### **🛡️ Security Architecture**
 
 1. **Password Security**: All passwords are hashed using bcrypt with 10 salt rounds
