@@ -1,16 +1,16 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import config from "./config/index.js";
 import serverC from "http";
 import auth from "./router/auth.js";
-
 const app = express();
 
 // Database connection
 mongoose.set("strictQuery", false);
-mongoose.connect(config.database.uri, config.database.options);
+mongoose.connect(process.env.DB);
 
 const server = serverC.createServer(app);
 
@@ -53,7 +53,10 @@ app.get("/health", function (req, res) {
   });
 });
 
-server.listen(config.port, () => {
-  console.log(`Auth API server running on port ${config.port}`);
-  console.log(`Environment: ${config.nodeEnv}`);
+const port = process.env.PORT || 9000;
+const nodeEnv = process.env.NODE_ENV || "development";
+
+server.listen(port, () => {
+  console.log(`Auth API server running on port ${port}`);
+  console.log(`Environment: ${nodeEnv}`);
 });
