@@ -148,20 +148,36 @@ graph TD
 
 Let me walk you through exactly what happens when someone uses your app:
 
-**🟢 PART 1: User Wants to Register or Login**
+**🟢 PART 1: User Registration**
 
-**Step A → B: User Tries to Register/Login**
-- A user visits your website and fills out the registration form (email, username, password)
-- OR they try to login with their existing email and password
-- Your frontend app sends this data to our Auth API
+**Step A → B: User Registration Request**
+- User visits your website and fills out the registration form (email, username, password, firstName, lastName)
+- Frontend app sends registration data to `/api/auth/register` endpoint
+- API receives the registration request
 
-**Step B → C: Credential Validation**
-- The API validates the submitted credentials
-- For registration: checks if email already exists in the database
-- For login: verifies password hash against stored hash using bcrypt
+**Step B → C: Registration Validation**
+- API validates required fields (email, username, accountType)
+- Checks if email already exists in the database
+- Checks if username is already taken
+- Validates email format and password strength
 - Returns validation result with appropriate error messages
 
-**Step C → D: Token Generation**
+---
+
+**🔵 PART 2: User Login**
+
+**Step A → B: User Login Request**
+- User enters their email and password on the login form
+- Frontend app sends login credentials to `/api/auth/login` endpoint
+- API receives the login request
+
+**Step B → C: Login Validation**
+- API finds user by email in the database
+- Verifies password hash against stored hash using bcrypt
+- Checks if account type matches (email vs other types)
+- Returns validation result with appropriate error messages
+
+**Step C → D: Token Generation (Both Registration & Login)**
 - Generates JWT access token with 15-minute expiration
 - Creates session record in database with 90-day expiration
 - Includes user data in token payload (email, userId, username, etc.)
@@ -177,7 +193,7 @@ Let me walk you through exactly what happens when someone uses your app:
 
 ---
 
-**🔵 PART 2: User Uses Your App (Making API Calls)**
+**🟡 PART 3: User Uses Your App (Making API Calls)**
 
 **Step G → H: API Request Processing**
 - Client makes authenticated API request with cookies
