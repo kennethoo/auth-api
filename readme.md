@@ -145,33 +145,67 @@ graph TD
     M -->|No| O[Deny Access - Require Login]
 ```
 
-#### **📋 Diagram Explanation**
+#### **📋 Diagram Explanation - The Complete User Journey**
 
-This diagram shows the **complete authentication lifecycle** in two main phases:
+Let me walk you through exactly what happens when someone uses your app:
 
-**🟢 Phase 1: Initial Authentication (Registration/Login)**
-- **A → B**: User submits credentials (email/password) or registration data
-- **B → C**: Server validates the credentials (checks email exists, verifies password hash)
-- **C → D**: If valid, server generates a JWT access token (15-minute expiration)
-- **D → E**: Server creates a secure session record in the database (90-day expiration)
-- **E → F**: Server stores both tokens in HttpOnly cookies and returns success response
+**🟢 PART 1: User Wants to Register or Login**
 
-**🔵 Phase 2: Ongoing API Requests (Session Validation)**
-- **G → H**: Every API request extracts the access token from cookies or Authorization header
-- **H → I**: Server validates the JWT token (checks signature and expiration)
-- **I → J**: Decision point: Is the token valid and not expired?
-  - **Yes → K**: Allow access to the protected resource
-  - **No → L**: Try to refresh the token using the session ID
-- **L → M**: Decision point: Can we refresh the token?
-  - **Yes → N**: Generate a new access token and allow access
-  - **No → O**: Deny access and require user to log in again
+**Step A → B: User Tries to Register/Login**
+- A user visits your website and fills out the registration form (email, username, password)
+- OR they try to login with their existing email and password
+- Your frontend app sends this data to our Auth API
 
-**🔑 Key Security Benefits:**
-- **Short-lived access tokens** (15min) limit exposure if compromised
-- **Long-lived sessions** (90 days) provide seamless user experience
-- **Automatic token refresh** prevents unnecessary re-logins
-- **HttpOnly cookies** prevent XSS attacks
-- **Stateless design** allows horizontal scaling
+**Step B → C: We Check if They're Legit**
+- Our API receives the request and says "Hold on, let me check if this person is real"
+- We look in our database to see if the email already exists (for registration)
+- We verify their password matches what we have stored (for login)
+- If everything checks out, we say "OK, you're good to go!"
+
+**Step C → D: We Create Their Access Pass**
+- Since they're legit, we create a special "access token" (like a temporary ID card)
+- This token expires in 15 minutes for security
+- We also create a "session" that lasts 90 days (so they don't have to keep logging in)
+
+**Step D → E: We Give Them Secure Cookies**
+- We put both the access token and session ID into special "HttpOnly" cookies
+- These cookies are like invisible passes that your browser automatically sends with every request
+- The user can't see or mess with these cookies (security feature)
+
+**Step E → F: Success!**
+- We send back a success message to your app
+- The user is now logged in and can use your application
+
+---
+
+**🔵 PART 2: User Uses Your App (Making API Calls)**
+
+**Step G → H: User Does Something in Your App**
+- Now the user clicks around your app, maybe viewing their profile or posting content
+- Every time your app makes a request to your backend, it automatically sends those cookies we created
+
+**Step H → I: We Check Their Pass**
+- Our API looks at the access token and says "Let me verify this is still valid"
+- We check if the token is real and hasn't expired
+
+**Step I → J: Is Their Pass Still Good?**
+- **If YES** → We say "Welcome! You can access this feature" (Step K)
+- **If NO** → We say "Hmm, your pass expired, let me try to give you a new one" (Step L)
+
+**Step L → M: Can We Give Them a New Pass?**
+- We look at their session ID and check if it's still valid (not expired)
+- **If YES** → We generate a fresh access token and let them continue (Step N)
+- **If NO** → We say "Sorry, you need to log in again" (Step O)
+
+---
+
+**🔑 Why This System is Awesome:**
+
+- **15-minute access tokens**: If someone steals your token, it only works for 15 minutes
+- **90-day sessions**: You don't have to keep logging in every day
+- **Automatic refresh**: When your token expires, we quietly give you a new one
+- **Secure cookies**: Hackers can't easily steal your login info
+- **Works everywhere**: Once logged in, you stay logged in across all your devices
 
 #### **🛡️ Security Architecture**
 
