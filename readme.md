@@ -192,6 +192,18 @@ if (data.isLogIn) {
 }
 ```
 
+### Using Cookies in Headers (Alternative Method)
+
+```javascript
+// If you prefer to send tokens in headers instead of cookies
+const response = await fetch('/api/auth/check-login', {
+  headers: {
+    'x-access-token': 'your-jwt-token-here',
+    'x-session-id': 'your-session-id-here'
+  }
+});
+```
+
 ### Log Out a User
 
 ```javascript
@@ -199,6 +211,20 @@ const response = await fetch('/api/auth/logout', {
   method: 'POST'
 });
 // User is now logged out
+```
+
+### Refresh Token (Happens Automatically)
+
+```javascript
+// This usually happens automatically, but you can call it manually if needed
+const response = await fetch('/api/auth/secure/token/refresh', {
+  method: 'POST'
+});
+
+const data = await response.json();
+if (data.isTokenRefresh) {
+  console.log('Got new token:', data.accessToken);
+}
 ```
 
 ### What Happens Behind the Scenes
@@ -213,9 +239,9 @@ When you register or log in, the API:
 
 When you make API requests, the API:
 
-1. **Looks for the JWT token** in the cookies
+1. **Looks for the JWT token** in cookies (automatic) or headers (`x-access-token`)
 2. **Checks if it's valid** and not expired
-3. **If it's expired**, tries to refresh it automatically
+3. **If it's expired**, tries to refresh it automatically using the session ID
 4. **If everything's good**, lets the request through
 5. **If not**, asks the user to log in again
 
@@ -266,6 +292,12 @@ GET /api/auth/check-login
 ```
 Returns: `{ isLogIn: true/false, user: {...} }`
 
+*Note: Uses cookies automatically, or send headers:*
+```http
+x-access-token: your-jwt-token
+x-session-id: your-session-id
+```
+
 **Log out:**
 ```http
 POST /api/auth/logout
@@ -275,6 +307,15 @@ POST /api/auth/logout
 ```http
 POST /api/auth/delete/account
 ```
+
+**Refresh token (automatic):**
+```http
+POST /api/auth/secure/token/refresh
+```
+Returns: `{ isTokenRefresh: true, accessToken: "new-token" }`
+
+**Check session middleware:**
+The API automatically validates sessions on protected routes using the `checkUserSession` middleware.
 
 ### Email Verification (Optional)
 
@@ -326,6 +367,7 @@ The code is organized simply:
 - **`server.js`** - Main file that starts everything
 - **`router/auth.js`** - All the API endpoints
 - **`service/auth/`** - The actual authentication logic
+- **`checkUserSession/`** - Middleware that validates user sessions
 - **`models/`** - Database schemas for users and sessions
 - **`emails/`** - Email templates
 
