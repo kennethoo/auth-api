@@ -21,6 +21,7 @@ So today, let's break all of this down in a way that's easy to understand and im
 ## Stateful Authentication
 
 **How it works:**
+
 - In stateful auth, the server is responsible for tracking who is logged in by creating a session in the backend (usually stored in a database).
 - When a user logs in, the server creates a unique session ID tied to that user and their device/browser.
 - The browser automatically stores this as a cookie.
@@ -28,10 +29,12 @@ So today, let's break all of this down in a way that's easy to understand and im
 - If the session is missing or expired, the server rejects the request and asks the user to log in again.
 
 **Pros:**
+
 - Secure, since the client doesn't manage much.
 - Works well for web apps where cookies are built-in.
 
 **Cons:**
+
 - Doesn't work naturally on mobile apps (since they don't automatically handle cookies the same way browsers do).
 - Harder to scale because the server has to store and manage sessions.
 - Not great when you need authentication across multiple services.
@@ -39,6 +42,7 @@ So today, let's break all of this down in a way that's easy to understand and im
 ## Stateless Authentication
 
 **How it works:**
+
 - In stateless auth, the client holds the proof of authentication, usually in the form of a JWT (JSON Web Token).
 - When a user logs in, the server creates an access token (short-lived, ~10–15 min) and a refresh token (longer-lived, e.g., days).
 - The access token contains user details (userId, username, etc.) and is signed with a secret key that only the backend knows.
@@ -47,17 +51,20 @@ So today, let's break all of this down in a way that's easy to understand and im
 - When the access token expires, the refresh token is used to request a new one. If the refresh token is missing or expired, the user must log in again.
 
 **Pros:**
+
 - Easier to scale across multiple microservices.
 - Works well with mobile apps.
 - No need to maintain session state on the server.
 
 **Cons:**
+
 - More responsibility on the client to store tokens securely.
 - If not implemented carefully, refresh token handling can introduce vulnerabilities.
 
 ## What We'll Cover
 
 For this guide, we'll start simple and focus on stateless authentication. Specifically, we'll walk through:
+
 - Registering a user
 - Logging in
 - Checking if a user is logged in
@@ -72,22 +79,26 @@ For this guide, we'll start simple and focus on stateless authentication. Specif
 This authentication API handles all the boring but important stuff so you don't have to:
 
 **User Management:**
+
 - Register new users with email verification
 - Let users log in with email and password
 - Log users out securely
 - Delete user accounts completely
 
 **Security (The Important Stuff):**
+
 - Passwords are automatically hashed so they're never stored in plain text
 - Uses JWT tokens that expire every 15 minutes for security
 - Automatically refreshes tokens so users don't get logged out constantly
 - Stores tokens in secure cookies that can't be stolen by malicious scripts
 
 **Email Features:**
+
 - Handles email verification with OTP codes
 - Works with SendGrid (but you can use any email service)
 
 **Developer-Friendly:**
+
 - Simple health check endpoints to see if everything's working
 - Clear error messages when something goes wrong
 - Easy to integrate with any frontend framework
@@ -143,17 +154,17 @@ Here's how to actually use this API in your app:
 
 ```javascript
 // Send this from your frontend
-const response = await fetch('/api/auth/register', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("/api/auth/register", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    email: 'john@example.com',
-    username: 'johndoe',
-    password: 'mypassword123',
-    accountType: 'email',
-    firstName: 'John',
-    lastName: 'Doe'
-  })
+    email: "john@example.com",
+    username: "johndoe",
+    password: "mypassword123",
+    accountType: "email",
+    firstName: "John",
+    lastName: "Doe",
+  }),
 });
 
 const data = await response.json();
@@ -164,14 +175,14 @@ console.log(data.isLogIn); // true
 ### Log In a User
 
 ```javascript
-const response = await fetch('/api/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("/api/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    email: 'john@example.com',
-    password: 'mypassword123',
-    accountType: 'email'
-  })
+    email: "john@example.com",
+    password: "mypassword123",
+    accountType: "email",
+  }),
 });
 
 const data = await response.json();
@@ -182,16 +193,16 @@ console.log(data.isLogIn); // true if successful
 
 ```javascript
 // If you prefer to handle tokens manually instead of using cookies
-const response = await fetch('/api/auth/login', {
-  method: 'POST',
-  headers: { 
-    'Content-Type': 'application/json',
+const response = await fetch("/api/auth/login", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    email: 'john@example.com',
-    password: 'mypassword123',
-    accountType: 'email'
-  })
+    email: "john@example.com",
+    password: "mypassword123",
+    accountType: "email",
+  }),
 });
 
 const data = await response.json();
@@ -204,13 +215,13 @@ console.log(data.secureSession.sessionId);
 
 ```javascript
 // This automatically uses the cookies, no need to send anything
-const response = await fetch('/api/auth/check-login');
+const response = await fetch("/api/auth/check-login");
 const data = await response.json();
 
 if (data.isLogIn) {
-  console.log('User is logged in:', data.user);
+  console.log("User is logged in:", data.user);
 } else {
-  console.log('User needs to log in');
+  console.log("User needs to log in");
 }
 ```
 
@@ -218,19 +229,19 @@ if (data.isLogIn) {
 
 ```javascript
 // If you prefer to send tokens in headers instead of cookies
-const response = await fetch('/api/auth/check-login', {
+const response = await fetch("/api/auth/check-login", {
   headers: {
-    'x-access-token': 'your-jwt-token-here',
-    'x-session-id': 'your-session-id-here'
-  }
+    "x-access-token": "your-jwt-token-here",
+    "x-session-id": "your-session-id-here",
+  },
 });
 ```
 
 ### Log Out a User
 
 ```javascript
-const response = await fetch('/api/auth/logout', {
-  method: 'POST'
+const response = await fetch("/api/auth/logout", {
+  method: "POST",
 });
 // User is now logged out
 ```
@@ -239,39 +250,42 @@ const response = await fetch('/api/auth/logout', {
 
 ```javascript
 // Set up a background job to refresh tokens every 10 minutes
-setInterval(async () => {
-  const response = await fetch('/api/auth/secure/token/refresh', {
-    method: 'POST',
-    headers: {
-      'x-session-id': localStorage.getItem('sessionId') // or however you store it
+setInterval(
+  async () => {
+    const response = await fetch("/api/auth/secure/token/refresh", {
+      method: "POST",
+      headers: {
+        "x-session-id": localStorage.getItem("sessionId"), // or however you store it
+      },
+    });
+
+    const data = await response.json();
+    if (data.isTokenRefresh) {
+      localStorage.setItem("accessToken", data.accessToken);
+      console.log("Token refreshed automatically");
+    } else {
+      // Redirect to login page
+      window.location.href = "/login";
     }
-  });
-  
-  const data = await response.json();
-  if (data.isTokenRefresh) {
-    localStorage.setItem('accessToken', data.accessToken);
-    console.log('Token refreshed automatically');
-  } else {
-    // Redirect to login page
-    window.location.href = '/login';
-  }
-}, 10 * 60 * 1000); // Every 10 minutes
+  },
+  10 * 60 * 1000,
+); // Every 10 minutes
 ```
 
 ### Manual Token Refresh (Alternative)
 
 ```javascript
 // You can also call this manually before your access token expires (every ~10-14 minutes)
-const response = await fetch('/api/auth/secure/token/refresh', {
-  method: 'POST',
+const response = await fetch("/api/auth/secure/token/refresh", {
+  method: "POST",
   headers: {
-    'x-session-id': 'your-session-id-here' // Required
-  }
+    "x-session-id": "your-session-id-here", // Required
+  },
 });
 
 const data = await response.json();
 if (data.isTokenRefresh) {
-  console.log('Got new token:', data.accessToken);
+  console.log("Got new token:", data.accessToken);
   // Update your stored token for future requests
 } else {
   // Session expired, user needs to log in again
@@ -304,77 +318,89 @@ When you make API requests, the API:
 
 ### 1. Install and Run
 
-   ```bash
+```bash
 git clone https://github.com/yourusername/auth-api.git
 cd auth-api
-   npm install
-   npm start
-   ```
+npm install
+npm start
+```
 
-That's it! Your auth service is running on `http://localhost:5001`
+That's it! Your auth service is running on `http://localhost:9000`
 
 ### 2. Test It's Working
 
 ```bash
-curl http://localhost:5001/health
+curl http://localhost:9000/health
 ```
 
 You should see: `{"status":"OK","service":"Auth API","timestamp":"..."}`
 
 ## API Reference
 
-**Base URL:** `http://localhost:5001`
+**Base URL:** `http://localhost:9000`
 
 ### Main Endpoints
 
 **Register a user:**
+
 ```http
 POST /api/auth/register
 ```
+
 Send: `{ email, username, password, accountType, firstName, lastName }`
 
 **Log in:**
+
 ```http
 POST /api/auth/login
 ```
+
 Send: `{ email, password, accountType }`
 
-*Optional headers:*
+_Optional headers:_
+
 ```http
 x-access-token: existing-token
 x-session-id: existing-session-id
 ```
 
 **Check if logged in:**
+
 ```http
 GET /api/auth/check-login
 ```
+
 Returns: `{ isLogIn: true/false, user: {...} }`
 
-*Note: Uses cookies automatically, or send headers:*
+_Note: Uses cookies automatically, or send headers:_
+
 ```http
 x-access-token: your-jwt-token
 x-session-id: your-session-id
 ```
 
 **Log out:**
+
 ```http
 POST /api/auth/logout
 ```
 
 **Delete account:**
+
 ```http
 POST /api/auth/delete/account
 ```
 
 **Refresh token (manual):**
+
 ```http
 POST /api/auth/secure/token/refresh
 ```
+
 Headers: `x-session-id: your-session-id`
 Returns: `{ isTokenRefresh: true, accessToken: "new-token" }`
 
-*Note: Only `/check-login` refreshes automatically. Other endpoints require manual refresh.*
+_Note: Only `/check-login` refreshes automatically. Other endpoints require manual refresh._
 
 **Check session middleware:**
 The API automatically validates sessions on protected routes using the `checkUserSession` middleware.
@@ -382,15 +408,19 @@ The API automatically validates sessions on protected routes using the `checkUse
 ### Email Verification (Optional)
 
 **Request verification code:**
+
 ```http
 POST /api/auth/requestaccountcreation
 ```
+
 Send: `{ email }`
 
 **Verify with code:**
+
 ```http
 POST /api/auth/validateuseremail
 ```
+
 Send: `{ otpTokenId, code }`
 
 ### Health Check
@@ -398,6 +428,7 @@ Send: `{ otpTokenId, code }`
 ```http
 GET /health
 ```
+
 Returns: `{ status: "OK", service: "Auth API", ... }`
 
 ---
@@ -447,13 +478,15 @@ The code is organized simply:
 ## Testing Your API
 
 **Quick test:**
+
 ```bash
-curl http://localhost:5001/health
+curl http://localhost:9000/health
 ```
 
 **Test registration:**
+
 ```bash
-curl -X POST http://localhost:5001/api/auth/register \
+curl -X POST http://localhost:9000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","username":"testuser","password":"password123","accountType":"email","firstName":"Test","lastName":"User"}'
 ```
@@ -463,12 +496,14 @@ curl -X POST http://localhost:5001/api/auth/register \
 ### Easy Deployment Options
 
 **Heroku (Recommended):**
+
 1. Connect your GitHub repo to Heroku
 2. Add a MongoDB database (MongoDB Atlas works great)
 3. Set your environment variables
 4. Deploy!
 
 **Other Options:**
+
 - **Railway** - One-click deployment
 - **Render** - Automatic deployments
 - **DigitalOcean** - App Platform
@@ -477,6 +512,7 @@ curl -X POST http://localhost:5001/api/auth/register \
 ## That's It!
 
 You now have a complete authentication system that handles:
+
 - User registration and login
 - Secure password storage
 - JWT token management

@@ -32,7 +32,7 @@ const userSchema = new Schema({
 
 userSchema.pre("save", function (next) {
   const user = this;
-  if (user.isModified('password')) {
+  if (user.isModified("password")) {
     bcrypt.hash(user.password, 10, (error, hash) => {
       if (error) return next(error);
       user.password = hash;

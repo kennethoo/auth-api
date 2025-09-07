@@ -188,14 +188,17 @@ function sendCode({ code, email }) {
 </body>
 </html>`,
   };
-  
+
   sgMail
     .send(msg)
     .then(() => {
-      console.log('Verification email sent successfully to:', email);
+      console.log("Verification email sent successfully to:", email);
     })
     .catch((error) => {
-      console.error('Error sending verification email:', error.response?.body || error);
+      console.error(
+        "Error sending verification email:",
+        error.response?.body || error,
+      );
     });
 }
 

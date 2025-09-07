@@ -20,8 +20,13 @@ app.use(express.json());
 const corsOptions = {
   origin: true, // Allow all origins
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token', 'x-session-id'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "x-access-token",
+    "x-session-id",
+  ],
 };
 
 app.use(cors(corsOptions));
@@ -31,20 +36,20 @@ app.use(auth);
 
 // Health check endpoint
 app.get("/", function (req, res) {
-  res.json({ 
-    status: "OK", 
-    service: "Auth API", 
-    timestamp: new Date().toISOString() 
+  res.json({
+    status: "OK",
+    service: "Auth API",
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Health check endpoint
 app.get("/health", function (req, res) {
-  res.json({ 
-    status: "OK", 
-    service: "Auth API", 
+  res.json({
+    status: "OK",
+    service: "Auth API",
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
   });
 });
 

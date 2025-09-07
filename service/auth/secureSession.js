@@ -45,8 +45,8 @@ class SecureSessionApi {
     await SessureSession.create({
       sessionId,
       userId: userAccount.userId,
-      location:userAccount.location,
-      device:userAccount.device
+      location: userAccount.location,
+      device: userAccount.device,
     });
     const secureSession = {
       accessToken,
@@ -82,7 +82,7 @@ class SecureSessionApi {
       const user = jwt.verify(access_token, process.env.TOKEN_SECRET);
       return user;
     } catch (error) {
-      console.error('JWT verification error:', error.message);
+      console.error("JWT verification error:", error.message);
       return null;
     }
   }

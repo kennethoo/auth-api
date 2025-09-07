@@ -29,8 +29,6 @@ router.post("/api/auth/logout", async (req, res) => {
   res.status(200).json({ message: "Logged out" });
 });
 
-
-
 router.post("/api/auth/login", async (req, res) => {
   const result = await authApi.logUserIn(req.body);
   if (result.isLogIn) {
@@ -58,7 +56,6 @@ router.post("/api/auth/login", async (req, res) => {
   res.status(200).json(result);
 });
 
-
 router.get("/api/auth/check-login", async (req, res) => {
   const accessToken =
     req.headers["x-access-token"] || req.cookies?.access_token;
@@ -68,7 +65,6 @@ router.get("/api/auth/check-login", async (req, res) => {
     access_token: accessToken,
     session_id: sessionId,
   });
-
 
   if (result.isTokenRefresh) {
     res.cookie(
@@ -90,7 +86,6 @@ router.post("/api/auth/validateuseremail", async (req, res) => {
   res.json(result);
 });
 
-
 router.post("/api/auth/register", async (req, res) => {
   const result = await authApi.registerUser(req.body);
   if (!result.succeeded) {
@@ -104,16 +99,15 @@ router.post("/api/auth/register", async (req, res) => {
   res.cookie(
     "access_token",
     accessToken,
-    secureSessionApi.ACCESS_TOKEN_FOR_COOKIE_CONFIG // typo fixed
+    secureSessionApi.ACCESS_TOKEN_FOR_COOKIE_CONFIG, // typo fixed
   );
   res.cookie(
     "session_id",
     sessionId,
-    secureSessionApi.SESSION_TOKEN_FOR_COOKIE_CONFIG
+    secureSessionApi.SESSION_TOKEN_FOR_COOKIE_CONFIG,
   );
   res.status(200).json({ ...result, ...loginDetail });
 });
-
 
 router.post("/api/auth/secure/token/refresh", async (req, res) => {
   const sessionId = req.headers["x-session-id"] || req.cookies?.session_id;
@@ -154,15 +148,12 @@ router.post("/api/auth/remove/session", (req, res) => {
   }
 });
 
-
-
 // Delete account
 router.post("/api/auth/delete/account", checkSession, async (req, res) => {
   const result = await authApi.deleteUserAccount(req.user.userId);
 
-
-  if(!result.succeeded){
-    res.status(200).json({...result});
+  if (!result.succeeded) {
+    res.status(200).json({ ...result });
   }
 
   res.clearCookie("access_token", {
@@ -178,10 +169,7 @@ router.post("/api/auth/delete/account", checkSession, async (req, res) => {
     path: "/",
   });
 
-
-
   res.send(result);
 });
-
 
 export default router;

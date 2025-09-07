@@ -53,16 +53,18 @@ class AuthApi {
     if (!email || !username || !accountType) {
       return {
         succeeded: false,
-        errorMessage: "Please provide all required information (email, username, and account type).",
+        errorMessage:
+          "Please provide all required information (email, username, and account type).",
       };
     }
-    
+
     // Check if email is already taken
     const isEmailTaken = await this.isEmailTaken(email);
     if (isEmailTaken) {
       return {
         succeeded: false,
-        errorMessage: "This email is already registered. Please use a different email or try logging in.",
+        errorMessage:
+          "This email is already registered. Please use a different email or try logging in.",
       };
     }
 
@@ -71,13 +73,13 @@ class AuthApi {
     if (isUsernameTaken) {
       return {
         succeeded: false,
-        errorMessage: "This username is already taken. Please choose a different username.",
+        errorMessage:
+          "This username is already taken. Please choose a different username.",
       };
     }
 
     const user = await User.create({ ...userData });
-    
-    
+
     return {
       succeeded: true,
     };
@@ -93,7 +95,6 @@ class AuthApi {
       };
     }
 
-
     if (accountType == this.ACCOUNT_TYPE_EMAIL) {
       return this.logUserWithEmail(payload);
     }
@@ -105,35 +106,36 @@ class AuthApi {
     };
   }
 
-
-
   async logUserWithEmail(userLoginData) {
     const { email, password } = userLoginData;
     const userAccount = await this.getUserByEmail(email);
     if (!userAccount) {
       return {
         isLogIn: false,
-        errorMessage: "No account found with this email. Please check your email or create a new account.",
+        errorMessage:
+          "No account found with this email. Please check your email or create a new account.",
       };
     }
     if (userAccount.accountType !== this.ACCOUNT_TYPE_EMAIL) {
       return {
         isLogIn: false,
-        errorMessage: "This email is registered with a different account type. Please use the correct login method.",
+        errorMessage:
+          "This email is registered with a different account type. Please use the correct login method.",
       };
     }
     const isSamePassword = await bcrypt.compare(password, userAccount.password);
     if (!isSamePassword) {
       return {
         isLogIn: false,
-        errorMessage: "Incorrect password. Please check your password and try again.",
+        errorMessage:
+          "Incorrect password. Please check your password and try again.",
       };
     }
     return this.logUserInUsingJWT({
       email: userAccount.email,
       userId: userAccount._id.toString(),
-      firstName: userAccount.firstName || '',
-      lastName: userAccount.lastName || '',
+      firstName: userAccount.firstName || "",
+      lastName: userAccount.lastName || "",
       username: userAccount.username,
       displayName: userAccount.username,
     });
@@ -141,7 +143,8 @@ class AuthApi {
 
   //Now this function
   async logUserInUsingJWT(userAccount) {
-    const { email, userId, firstName, lastName, username, displayName } = userAccount;
+    const { email, userId, firstName, lastName, username, displayName } =
+      userAccount;
     const secureSession = await secureSessionApi.createSecureLoginSesionToken({
       email,
       userId,
@@ -156,13 +159,12 @@ class AuthApi {
     };
   }
 
-
   async isUserLogin({ access_token, session_id }) {
     const errorResponse = {
       isLogIn: false,
       errorMessage: "You are not logged in. Please log in to continue.",
     };
-  
+
     // 1. Try using the provided access token
     if (access_token) {
       const user = await secureSessionApi.getUserFromAccessToken(access_token);
@@ -176,17 +178,17 @@ class AuthApi {
       const { isTokenRefresh, accessToken: newAccessToken } =
         await this.refreshSecureToken(session_id);
       if (isTokenRefresh) {
-        const user = await secureSessionApi.getUserFromAccessToken(newAccessToken);
+        const user =
+          await secureSessionApi.getUserFromAccessToken(newAccessToken);
         if (user) {
           return { user, isLogIn: true, isTokenRefresh: true, newAccessToken };
         }
       }
     }
-  
+
     // 3. Failed both methods
     return errorResponse;
   }
-  
 
   //ApiRoute
   async requestUserAccount({ email }) {
@@ -232,8 +234,8 @@ class AuthApi {
     const accessToken = await secureSessionApi.generateAccessToken({
       email: user.email,
       userId: user._id,
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
       username: user.username,
       displayName: user.username,
     });
@@ -252,7 +254,7 @@ class AuthApi {
 
   //TODO: make this more secure later
   async deleteUserAccount(userId) {
-    const user = await User.findOne({_id: userId});
+    const user = await User.findOne({ _id: userId });
     if (!user) {
       return { succeeded: false, errorMessage: "User not found." };
     }
@@ -262,10 +264,13 @@ class AuthApi {
     return { succeeded: true };
   }
 
-
   async updateUserEmail({ currentEmail, newEmail }) {
     if (await this.isEmailTaken(newEmail)) {
-      return { succeeded: false, errorMessage: "This email is already registered. Please use a different email address." };
+      return {
+        succeeded: false,
+        errorMessage:
+          "This email is already registered. Please use a different email address.",
+      };
     }
     const user = await User.findOneAndUpdate(
       { email: currentEmail },
@@ -273,7 +278,10 @@ class AuthApi {
       { new: true },
     );
     if (!user) {
-      return { succeeded: false, errorMessage: "User not found. Please check the current email address." };
+      return {
+        succeeded: false,
+        errorMessage: "User not found. Please check the current email address.",
+      };
     }
     // Optionally, update the user profile as well
     return { succeeded: true, user };
@@ -282,13 +290,21 @@ class AuthApi {
     // Find the user by username
     const user = await User.findOne({ username });
     if (!user) {
-      return { succeeded: false, errorMessage: "Username not found. Please check your username and try again." };
+      return {
+        succeeded: false,
+        errorMessage:
+          "Username not found. Please check your username and try again.",
+      };
     }
 
     // Compare the provided old password with the stored hash
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
-      return { succeeded: false, errorMessage: "Current password is incorrect. Please check your password and try again." };
+      return {
+        succeeded: false,
+        errorMessage:
+          "Current password is incorrect. Please check your password and try again.",
+      };
     }
 
     // Hash the new password
@@ -300,7 +316,10 @@ class AuthApi {
   async updatePassword({ email, newPassword }) {
     const user = await User.findOne({ email });
     if (!user) {
-      return { succeeded: false, errorMessage: "User not found. Please check the email address." };
+      return {
+        succeeded: false,
+        errorMessage: "User not found. Please check the email address.",
+      };
     }
     // Hash the new password
     const newHash = await bcrypt.hash(newPassword, 10);

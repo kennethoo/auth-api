@@ -33,9 +33,9 @@ const checkSession = async (req, res, next) => {
     return res.status(401).json({ isLogin: false });
   } catch (error) {
     console.error("checkSession error:", error.message);
-    return res.status(401).json({ 
-      isLogin: false, 
-      error: "Authentication failed" 
+    return res.status(401).json({
+      isLogin: false,
+      error: "Authentication failed",
     });
   }
 };
